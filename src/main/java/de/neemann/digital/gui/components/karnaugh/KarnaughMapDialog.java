@@ -51,10 +51,12 @@ public class KarnaughMapDialog extends JDialog {
                 int i = combo.getSelectedIndex();
                 if (i >= 0) {
                     BoolTable boolTable = getResultTable(results.get(i).getName());
-                    if (boolTable != null)
+                    if (boolTable != null) {
                         kvComponent.setResult(table.getVars(), boolTable, results.get(i).getExpression());
-                    else
+                        pack();
+                    } else {
                         kvComponent.showNothing();
+                    }
                 }
             }
         });

@@ -25,6 +25,7 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
     private final Header headerRight;
     private final Header headerBottom;
     private final Header headerTop;
+    private final Header headerHyperTop;
 
     /**
      * Creates a new instance
@@ -74,37 +75,53 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
         boolean rightMode = (mode & 2) != 0;
         boolean topMode = (mode & 4) != 0;
         boolean bottomMode = (mode & 8) != 0;
+        boolean hyperTopMode = (mode & 16) != 0;
 
         switch (vars.size()) {
             case 2:  // create the needed KV cells
                 for (int row = 0; row < 2; row++)
                     for (int col = 0; col < 2; col++)
-                        cells.add(new Cell(row, col));
+                        cells.add(new Cell(row, col, 0));
 
-                headerLeft = new Header(swap[0], !leftMode, leftMode).toRows(2, this);
-                headerTop = new Header(swap[1], !topMode, topMode).toCols(2, this);
+                headerLeft = new Header(swap[0], !leftMode, leftMode).toRows(2, 1, this);
+                headerTop = new Header(swap[1], !topMode, topMode).toCols(2, 1, this);
                 headerRight = null;
                 headerBottom = null;
+                headerHyperTop = null;
                 break;
             case 3:
                 for (int row = 0; row < 2; row++)
                     for (int col = 0; col < 4; col++)
-                        cells.add(new Cell(row, col));
+                        cells.add(new Cell(row, col, 0));
 
-                headerLeft = new Header(swap[0], !leftMode, leftMode).toRows(4, this);
-                headerTop = new Header(swap[1], !topMode, !topMode, topMode, topMode).toCols(2, this);
-                headerBottom = new Header(swap[2], !bottomMode, bottomMode, bottomMode, !bottomMode).toCols(2, this);
+                headerLeft = new Header(swap[0], !leftMode, leftMode).toRows(4, 1, this);
+                headerTop = new Header(swap[1], !topMode, !topMode, topMode, topMode).toCols(2, 1, this);
+                headerBottom = new Header(swap[2], !bottomMode, bottomMode, bottomMode, !bottomMode).toCols(2, 1, this);
                 headerRight = null;
+                headerHyperTop = null;
                 break;
             case 4:
                 for (int row = 0; row < 4; row++)
                     for (int col = 0; col < 4; col++)
-                        cells.add(new Cell(row, col));
+                        cells.add(new Cell(row, col, 0));
 
-                headerLeft = new Header(swap[0], !leftMode, !leftMode, leftMode, leftMode).toRows(4, this);
-                headerRight = new Header(swap[1], !rightMode, rightMode, rightMode, !rightMode).toRows(4, this);
-                headerTop = new Header(swap[2], !topMode, !topMode, topMode, topMode).toCols(4, this);
-                headerBottom = new Header(swap[3], !bottomMode, bottomMode, bottomMode, !bottomMode).toCols(4, this);
+                headerLeft = new Header(swap[0], !leftMode, !leftMode, leftMode, leftMode).toRows(4, 1, this);
+                headerRight = new Header(swap[1], !rightMode, rightMode, rightMode, !rightMode).toRows(4, 1, this);
+                headerTop = new Header(swap[2], !topMode, !topMode, topMode, topMode).toCols(4, 1, this);
+                headerBottom = new Header(swap[3], !bottomMode, bottomMode, bottomMode, !bottomMode).toCols(4, 1, this);
+                headerHyperTop = null;
+                break;
+            case 5:
+                for (int layer = 0; layer < 2; layer++)
+                    for (int row = 0; row < 4; row++)
+                        for (int col = 0; col < 4; col++)
+                            cells.add(new Cell(row, col, layer));
+
+                headerLeft = new Header(swap[0], !leftMode, !leftMode, leftMode, leftMode).toRows(4, 2, this);
+                headerRight = new Header(swap[1], !rightMode, rightMode, rightMode, !rightMode).toRows(4, 2, this);
+                headerTop = new Header(swap[2], !topMode, !topMode, topMode, topMode).toCols(4, 2, this);
+                headerBottom = new Header(swap[3], !bottomMode, bottomMode, bottomMode, !bottomMode).toCols(4, 2, this);
+                headerHyperTop = new Header(swap[4], !hyperTopMode, hyperTopMode).toLayers(4, 4, this);
                 break;
             default:
                 throw new KarnaughException(Lang.get("err_toManyVars"));
@@ -120,11 +137,12 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
      *
      * @param row the row
      * @param col the column
+     * @param layer the layer
      * @return the cell at this position
      */
-    public Cell getCell(int row, int col) {
+    public Cell getCell(int row, int col, int layer) {
         for (Cell cell : cells)
-            if (cell.is(row, col)) return cell;
+            if (cell.is(row, col, layer)) return cell;
         throw new RuntimeException("cell not found");
     }
 
@@ -169,7 +187,7 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
         HashSet<Integer> insetsUsed = new HashSet<>();
         for (Cell cell : cells)
             cell.addCoverToCell(cover, insetsUsed);
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < vars.size(); i++)  // n-var kmap will have at most n different insets
             if (!insetsUsed.contains(i)) {
                 cover.inset = i;
                 break;
@@ -224,6 +242,13 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
     }
 
     /**
+     * @return the layers of the table
+     */
+    public int getLayers() {
+        return vars.size() == 5 ? 2 : 1;
+    }
+
+    /**
      * @return the left header
      */
     public Header getHeaderLeft() {
@@ -252,18 +277,27 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
     }
 
     /**
+     * @return the "hyper" top header used with 5-6 variables.
+     */
+    public Header getHeaderHyperTop() {
+        return headerHyperTop;
+    }
+
+    /**
      * a single cell in the kv map
      */
     public static final class Cell {
         private final int row;
         private final int col;
+        private final int layer;
         private final ArrayList<VarState> minTerm; // min term  of the cell
         private final ArrayList<Cover> covers;
         private int boolTableRow;
 
-        private Cell(int row, int col) {
+        private Cell(int row, int col, int layer) {
             this.row = row;
             this.col = col;
+            this.layer = layer;
             minTerm = new ArrayList<>();
             covers = new ArrayList<>();
         }
@@ -272,8 +306,8 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
             minTerm.add(varState);
         }
 
-        private boolean is(int row, int col) {
-            return (this.row == row) && (this.col == col);
+        private boolean is(int row, int col, int layer) {
+            return (this.row == row) && (this.col == col) && (this.layer == layer);
         }
 
         private void addCoverToCell(Cover cover, HashSet<Integer> insetsUsed) {
@@ -313,6 +347,13 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
          */
         public int getCol() {
             return col;
+        }
+
+        /**
+         * @return the layer
+         */
+        public int getLayer() {
+            return layer;
         }
 
         /**
@@ -365,6 +406,7 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
     public final class Cover {
         private final ArrayList<VarState> varStates;
         private Pos pos;
+        private HashSet<Integer> layers;
         private int cellCount;
         private int inset = 0;
 
@@ -386,23 +428,35 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
          */
         public Pos getPos() {
             if (pos == null) {
+                layers = new HashSet<>(4);
                 int rowMin = Integer.MAX_VALUE;
                 int rowMax = Integer.MIN_VALUE;
                 int colMin = Integer.MAX_VALUE;
                 int colMax = Integer.MIN_VALUE;
+                int layerMin = Integer.MAX_VALUE;
+                int layerMax = Integer.MIN_VALUE;
                 for (Cell c : cells) {
                     if (c.contains(this)) {
                         if (c.row > rowMax) rowMax = c.row;
                         if (c.row < rowMin) rowMin = c.row;
                         if (c.col > colMax) colMax = c.col;
                         if (c.col < colMin) colMin = c.col;
+                        if (c.layer < layerMin) layerMin = c.layer;
+                        if (c.layer > layerMax) layerMax = c.layer;
+                        layers.add(c.layer);
                     }
                 }
                 int width = colMax - colMin + 1;
                 int height = rowMax - rowMin + 1;
-                pos = new Pos(rowMin, colMin, width, height);
+                int depth = layerMax - layerMin + 1;
+                pos = new Pos(rowMin, colMin, layerMin, width, height, depth);
             }
             return pos;
+        }
+
+        public HashSet<Integer> getLayers() {
+            if (layers == null) getPos();
+            return layers;
         }
 
         private void incCellCount() {
@@ -427,23 +481,27 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
          * @return true if cover is split, thus the cover is wrapping around the border
          */
         public boolean isDisconnected() {
-            return getPos().width * getPos().height > cellCount;
-        }
-
-        /**
-         * @return covers only the edges
-         */
-        public boolean onlyEdges() {
-            return getPos().width * getPos().height == 16 && cellCount == 4;
-        }
-
-        /**
-         * @return true if disconnected cover is vertical divided
-         */
-        public boolean isVerticalDivided() {
             Pos p = getPos();
-            if (p.width * p.height == 16 && cellCount == 8)
-                return getCell(1, 0).contains(this);
+            return p.width * p.height * p.depth > cellCount;
+        }
+
+        /**
+         * @param layer the layer to check
+         * @return covers only the edges in specified layer
+         */
+        public boolean onlyCorners(int layer) {
+            Pos p = getPos();
+            return p.width * p.height == 16 && cellCount == 4 * layers.size() && layers.contains(layer);
+        }
+
+        /**
+         * @param layer the layer to check
+         * @return true if disconnected cover is vertical divided in specified layer
+         */
+        public boolean isVerticalDivided(int layer) {
+            Pos p = getPos();
+            if (p.width * p.height == 16 && cellCount == 8 * layers.size() && layers.contains(layer))
+                return getCell(1, 0, layer).contains(this);
             else
                 return p.getWidth() > p.getHeight();
         }
@@ -456,14 +514,18 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
     public static final class Pos {
         private final int row;
         private final int col;
+        private final int layer;
         private final int width;
         private final int height;
+        private final int depth;
 
-        private Pos(int row, int col, int width, int height) {
+        private Pos(int row, int col, int layer, int width, int height, int depth) {
             this.row = row;
             this.col = col;
+            this.layer = layer;
             this.width = width;
             this.height = height;
+            this.depth = depth;
         }
 
 
@@ -482,6 +544,13 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
         }
 
         /**
+         * @return the layer
+         */
+        public int getLayer() {
+            return layer;
+        }
+
+        /**
          * @return the width of the cover
          */
         public int getWidth() {
@@ -493,6 +562,13 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
          */
         public int getHeight() {
             return height;
+        }
+
+        /**
+         * @return the depth of the cover
+         */
+        public int getDepth() {
+            return depth;
         }
 
     }
@@ -536,28 +612,48 @@ public class KarnaughMap implements Iterable<KarnaughMap.Cover> {
         /**
          * Initializes the table according to the selected header.
          *
-         * @param cols the number columns in the table
-         * @param kmap the k-map to use
+         * @param cols   the number of columns in the table
+         * @param layers the number of layers in the table
+         * @param kmap   the k-map to use
          * @return this for chained calls
          */
-        public Header toRows(int cols, KarnaughMap kmap) {
-            for (int row = 0; row < invert.length; row++)
-                for (int col = 0; col < cols; col++)
-                    kmap.getCell(row, col).add(new VarState(var, invert[row]));
+        public Header toRows(int cols, int layers, KarnaughMap kmap) {
+            for (int layer = 0; layer < layers; layer++)
+                for (int row = 0; row < invert.length; row++)
+                    for (int col = 0; col < cols; col++)
+                        kmap.getCell(row, col, layer).add(new VarState(var, invert[row]));
             return this;
         }
 
         /**
          * Initializes the table according to the selected header.
          *
-         * @param rows the number rows in the table
+         * @param rows   the number of rows in the table
+         * @param layers the number of layers in the table
+         * @param kmap   the k-map to use
+         * @return this for chained calls
+         */
+        public Header toCols(int rows, int layers, KarnaughMap kmap) {
+            for (int layer = 0; layer < layers; layer++)
+                for (int col = 0; col < invert.length; col++)
+                    for (int row = 0; row < rows; row++)
+                        kmap.getCell(row, col, layer).add(new VarState(var, invert[col]));
+            return this;
+        }
+
+        /**
+         * Initializes the table according to the selected header.
+         *
+         * @param rows the number of rows in the table
+         * @param cols the number of columns in the table
          * @param kmap the k-map to use
          * @return this for chained calls
          */
-        public Header toCols(int rows, KarnaughMap kmap) {
-            for (int col = 0; col < invert.length; col++)
-                for (int row = 0; row < rows; row++)
-                    kmap.getCell(row, col).add(new VarState(var, invert[col]));
+        public Header toLayers(int rows, int cols, KarnaughMap kmap) {
+            for (int layer = 0; layer < invert.length; layer++)
+                for (int col = 0; col < cols; col++)
+                    for (int row = 0; row < rows; row++)
+                        kmap.getCell(row, col, layer).add(new VarState(var, invert[layer]));
             return this;
         }
 

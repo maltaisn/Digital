@@ -73,7 +73,18 @@ public class KarnaughMapComponent extends JComponent {
         swap = KarnaughMap.checkSwap(swap, vars.size());
         this.boolTable = boolTable;
         this.exp = exp;
+        adjustSize();
         update();
+    }
+
+    private void adjustSize() {
+        int width = 400;
+        int height = 400;
+        if (vars.size() == 5) {
+            width = 800;
+            height = 440;
+        }
+        setPreferredSize(Screen.getInstance().scale(new Dimension(width, height)));
     }
 
     private void update() {
@@ -116,7 +127,10 @@ public class KarnaughMapComponent extends JComponent {
 
             int kvWidth = kv.getColumns();
             int kvHeight = kv.getRows();
-            cellSize = (int) Math.min(height / (kvHeight + 2.5f), width / (kvWidth + 2.5f));
+            int kvDepth = kv.getLayers();
+            float fullKvWidth = kvWidth + 2.5f + (vars.size() == 5 ? kvWidth + 2.25f : 0);
+            float fullKvHeight = kvHeight + 2.5f + (vars.size() == 5 ? 1 : 0);
+            cellSize = (int) Math.min(height / fullKvHeight, width / fullKvWidth);
             Font origFont = gr.getFont();
             Font valuesFont = origFont.deriveFont(cellSize * 0.5f);
             gr.setFont(valuesFont);
@@ -133,83 +147,106 @@ public class KarnaughMapComponent extends JComponent {
             if (maxHeaderStrWidth > cellSize)
                 headerFont = origFont.deriveFont(cellSize * 0.5f * cellSize / maxHeaderStrWidth);
 
-            xOffs = (width - (kvWidth + 2) * cellSize) / 2;
-            yOffs = (height - (kvHeight + 2) * cellSize) / 2;
-            gr.translate(xOffs, yOffs);   // center the kv map
+            xOffs = (int) (width - (fullKvWidth - 0.5f) * cellSize) / 2;
+            yOffs = (int) (height - (fullKvHeight - 0.5f) * cellSize) / 2;
+            if (vars.size() >= 5) yOffs += cellSize;
 
-            // draw table
-            gr.setColor(Color.GRAY);
-            gr.setStroke(new BasicStroke(STROKE_WIDTH / 2f));
-            for (int i = 0; i <= kvWidth; i++) {
-                int dy1 = isNoHeaderLine(kv.getHeaderTop(), i - 1) ? cellSize : 0;
-                int dy2 = isNoHeaderLine(kv.getHeaderBottom(), i - 1) ? cellSize : 0;
-                gr.drawLine((i + 1) * cellSize, dy1, (i + 1) * cellSize, (kvHeight + 2) * cellSize - dy2);
-            }
+            gr.translate(xOffs, yOffs);   // center the overall kv map
 
-            for (int i = 0; i <= kvHeight; i++) {
-                int dx1 = isNoHeaderLine(kv.getHeaderLeft(), i - 1) ? cellSize : 0;
-                int dx2 = isNoHeaderLine(kv.getHeaderRight(), i - 1) ? cellSize : 0;
-                gr.drawLine(dx1, (i + 1) * cellSize, (kvWidth + 2) * cellSize - dx2, (i + 1) * cellSize);
-            }
-            gr.setStroke(new BasicStroke(STROKE_WIDTH));
+            // draw hyper headers (for vars > 4)
+            drawHyperHorizontalHeader(kv.getHeaderHyperTop());
 
-            // fill in bool table content
-            for (KarnaughMap.Cell cell : kv.getCells()) {
-                gr.setColor(Color.BLACK);
-                gr.setFont(valuesFont);
-                drawString(boolTable.get(cell.getBoolTableRow()).toString(), cell.getCol() + 1, cell.getRow() + 1);
+            AffineTransform kvTrans = gr.getTransform();
+            for (int layer = 0; layer < kvDepth; layer++) {
+                gr.setTransform(kvTrans);
+                if (layer == 1) {
+                    gr.translate((kvWidth + 2.25f) * cellSize, 0);  // place individual kv map
+                }
+
+                // draw table
                 gr.setColor(Color.GRAY);
-                gr.setFont(origFont);
-                gr.drawString(Integer.toString(cell.getBoolTableRow()),
-                        (cell.getCol() + 1) * cellSize + 1,
-                        (cell.getRow() + 2) * cellSize - 1);
-            }
+                gr.setStroke(new BasicStroke(STROKE_WIDTH / 2f));
+                for (int i = 0; i <= kvWidth; i++) {
+                    int dy1 = isNoHeaderLine(kv.getHeaderTop(), i - 1) ? cellSize : 0;
+                    int dy2 = isNoHeaderLine(kv.getHeaderBottom(), i - 1) ? cellSize : 0;
+                    gr.drawLine((i + 1) * cellSize, dy1, (i + 1) * cellSize, (kvHeight + 2) * cellSize - dy2);
+                }
 
-            // draw the text in the borders
-            gr.setColor(Color.BLACK);
-            gr.setFont(headerFont);
-            drawVerticalHeader(kv.getHeaderLeft(), 0);
-            drawVerticalHeader(kv.getHeaderRight(), kvWidth + 1);
-            drawHorizontalHeader(kv.getHeaderTop(), 0);
-            drawHorizontalHeader(kv.getHeaderBottom(), kvHeight + 1);
+                for (int i = 0; i <= kvHeight; i++) {
+                    int dx1 = isNoHeaderLine(kv.getHeaderLeft(), i - 1) ? cellSize : 0;
+                    int dx2 = isNoHeaderLine(kv.getHeaderRight(), i - 1) ? cellSize : 0;
+                    gr.drawLine(dx1, (i + 1) * cellSize, (kvWidth + 2) * cellSize - dx2, (i + 1) * cellSize);
+                }
 
-            // draw the covers
-            int color = 0;
-            for (KarnaughMap.Cover c : kv) {
-                gr.setColor(COVER_COLORS[color++]);
-                KarnaughMap.Pos p = c.getPos();
-                int frame = (c.getInset() + 1) * STROKE_WIDTH;
-                int edgesRadius = cellSize - frame * 2;
-                if (c.isDisconnected()) {
-                    Rectangle clip = gr.getClipBounds();
-                    gr.setClip(cellSize, cellSize, kvWidth * cellSize, kvHeight * cellSize);
-                    if (c.onlyEdges()) {
-                        gr.drawRoundRect(frame, frame, 2 * cellSize - frame * 2, 2 * cellSize - frame * 2, edgesRadius, edgesRadius);
-                        gr.drawRoundRect(4 * cellSize + frame, frame, 2 * cellSize - frame * 2, 2 * cellSize - frame * 2, edgesRadius, edgesRadius);
-                        gr.drawRoundRect(frame, 4 * cellSize + frame, 2 * cellSize - frame * 2, 2 * cellSize - frame * 2, edgesRadius, edgesRadius);
-                        gr.drawRoundRect(4 * cellSize + frame, 4 * cellSize + frame, 2 * cellSize - frame * 2, 2 * cellSize - frame * 2, edgesRadius, edgesRadius);
-                    } else { // draw the two parts of the cover
-                        int xofs = 0;
-                        int yOfs = 0;
-                        if (c.isVerticalDivided())
-                            xofs = cellSize * 3;
-                        else
-                            yOfs = cellSize * 3;
+                if (kvDepth > 1 && layer < 2) {
+                    gr.drawLine(cellSize / 2, -cellSize / 4, (int) ((kvWidth + 1.5f) * cellSize), -cellSize / 4);
+                }
 
-                        gr.drawRoundRect((p.getCol() + 1) * cellSize + frame + xofs, (p.getRow() + 1) * cellSize + frame + yOfs,
-                                p.getWidth() * cellSize - frame * 2, p.getHeight() * cellSize - frame * 2,
-                                edgesRadius, edgesRadius);
-                        gr.drawRoundRect((p.getCol() + 1) * cellSize + frame - xofs, (p.getRow() + 1) * cellSize + frame - yOfs,
-                                p.getWidth() * cellSize - frame * 2, p.getHeight() * cellSize - frame * 2,
-                                edgesRadius, edgesRadius);
+                gr.setStroke(new BasicStroke(STROKE_WIDTH));
 
+                // fill in bool table content
+                for (KarnaughMap.Cell cell : kv.getCells()) {
+                    if (cell.getLayer() == layer) {
+                        gr.setColor(Color.BLACK);
+                        gr.setFont(valuesFont);
+                        drawString(boolTable.get(cell.getBoolTableRow()).toString(), cell.getCol() + 1, cell.getRow() + 1);
+                        gr.setColor(Color.GRAY);
+                        gr.setFont(origFont);
+                        gr.drawString(Integer.toString(cell.getBoolTableRow()),
+                                (cell.getCol() + 1) * cellSize + 1,
+                                (cell.getRow() + 2) * cellSize - 1);
                     }
-                    gr.setClip(clip.x, clip.y, clip.width, clip.height);
-                } else
-                    gr.drawRoundRect((p.getCol() + 1) * cellSize + frame, (p.getRow() + 1) * cellSize + frame,
-                            p.getWidth() * cellSize - frame * 2, p.getHeight() * cellSize - frame * 2,
-                            edgesRadius, edgesRadius);
+                }
+
+                // draw the text in the borders
+                gr.setColor(Color.BLACK);
+                gr.setFont(headerFont);
+                drawVerticalHeader(kv.getHeaderLeft(), 0);
+                drawVerticalHeader(kv.getHeaderRight(), kvWidth + 1);
+                drawHorizontalHeader(kv.getHeaderTop(), 0);
+                drawHorizontalHeader(kv.getHeaderBottom(), kvHeight + 1);
+
+                // draw the covers
+                int color = 0;
+                for (KarnaughMap.Cover c : kv) {
+                    gr.setColor(COVER_COLORS[color++ % COVER_COLORS.length]);
+                    if (!c.getLayers().contains(layer)) continue;  // cover isn't part of this layer
+
+                    KarnaughMap.Pos p = c.getPos();
+                    int frame = (c.getInset() + 1) * STROKE_WIDTH;
+                    int edgesRadius = cellSize - frame * 2;
+                    if (c.isDisconnected()) {
+                        Rectangle clip = gr.getClipBounds();
+                        gr.setClip(cellSize, cellSize, kvWidth * cellSize, kvHeight * cellSize);
+                        if (c.onlyCorners(layer)) {
+                            gr.drawRoundRect(frame, frame, 2 * cellSize - frame * 2, 2 * cellSize - frame * 2, edgesRadius, edgesRadius);
+                            gr.drawRoundRect(4 * cellSize + frame, frame, 2 * cellSize - frame * 2, 2 * cellSize - frame * 2, edgesRadius, edgesRadius);
+                            gr.drawRoundRect(frame, 4 * cellSize + frame, 2 * cellSize - frame * 2, 2 * cellSize - frame * 2, edgesRadius, edgesRadius);
+                            gr.drawRoundRect(4 * cellSize + frame, 4 * cellSize + frame, 2 * cellSize - frame * 2, 2 * cellSize - frame * 2, edgesRadius, edgesRadius);
+                        } else { // draw the two parts of the cover
+                            int xofs = 0;
+                            int yOfs = 0;
+                            if (c.isVerticalDivided(layer))
+                                xofs = cellSize * 3;
+                            else
+                                yOfs = cellSize * 3;
+
+                            gr.drawRoundRect((p.getCol() + 1) * cellSize + frame + xofs, (p.getRow() + 1) * cellSize + frame + yOfs,
+                                    p.getWidth() * cellSize - frame * 2, p.getHeight() * cellSize - frame * 2,
+                                    edgesRadius, edgesRadius);
+                            gr.drawRoundRect((p.getCol() + 1) * cellSize + frame - xofs, (p.getRow() + 1) * cellSize + frame - yOfs,
+                                    p.getWidth() * cellSize - frame * 2, p.getHeight() * cellSize - frame * 2,
+                                    edgesRadius, edgesRadius);
+
+                        }
+                        gr.setClip(clip.x, clip.y, clip.width, clip.height);
+                    } else
+                        gr.drawRoundRect((p.getCol() + 1) * cellSize + frame, (p.getRow() + 1) * cellSize + frame,
+                                p.getWidth() * cellSize - frame * 2, p.getHeight() * cellSize - frame * 2,
+                                edgesRadius, edgesRadius);
+                }
             }
+
             gr.setTransform(trans);
         } else
             gr.drawString(message, 10, 20);
@@ -223,15 +260,15 @@ public class KarnaughMapComponent extends JComponent {
 
     //CHECKSTYLE.OFF: ModifiedControlVariable
     private void drawHorizontalHeader(KarnaughMap.Header header, int pos) {
-        if (header != null)
-            for (int i = 0; i < header.size(); i++) {
-                int dx = 0;
-                if (isNoHeaderLine(header, i)) {
-                    i++;
-                    dx = cellSize / 2;
-                }
-                drawFragment(getFragment(header.getVar(), header.getInvert(i)), i + 1, pos, dx, 0);
+        if (header == null) return;
+        for (int i = 0; i < header.size(); i++) {
+            int dx = 0;
+            if (isNoHeaderLine(header, i)) {
+                i++;
+                dx = cellSize / 2;
             }
+            drawFragment(getFragment(header.getVar(), header.getInvert(i)), i + 1, pos, dx, 0);
+        }
     }
 
     private void drawVerticalHeader(KarnaughMap.Header header, int pos) {
@@ -245,6 +282,15 @@ public class KarnaughMapComponent extends JComponent {
             drawFragment(getFragment(header.getVar(), header.getInvert(i)), pos, i + 1, 0, dy);
         }
     }
+
+    private void drawHyperHorizontalHeader(KarnaughMap.Header header) {
+        if (header == null) return;
+        int dx = cellSize / 2;
+        for (int i = 0; i < header.size(); i++) {
+            drawFragment(getFragment(header.getVar(), header.getInvert(i)), i * 6 + 3, -1, dx, cellSize / 4);
+            dx -= cellSize / 4;
+        }
+    }
     //CHECKSTYLE.ON: ModifiedControlVariable
 
     private void drawString(String s, int row, int col) {
@@ -255,13 +301,13 @@ public class KarnaughMapComponent extends JComponent {
         gr.drawString(s, row * cellSize + xPos, col * cellSize + yPos);
     }
 
-    private void drawFragment(GraphicsFormatter.Fragment fr, int row, int col, int xOffs, int yOffs) {
+    private void drawFragment(GraphicsFormatter.Fragment fr, int col, int row, int xOffs, int yOffs) {
         if (fr == null)
             return;
         FontMetrics fontMetrics = gr.getFontMetrics();
         int xPos = (cellSize - fr.getWidth()) / 2;
         int yPos = cellSize - ((cellSize - fr.getHeight()) / 2) - fontMetrics.getDescent();
-        fr.draw(gr, row * cellSize + xPos - xOffs, col * cellSize + yPos - yOffs);
+        fr.draw(gr, col * cellSize + xPos - xOffs, row * cellSize + yPos - yOffs);
     }
 
     private GraphicsFormatter.Fragment getFragment(int var, boolean invert) {
@@ -293,30 +339,39 @@ public class KarnaughMapComponent extends JComponent {
     private final class MyMouseAdapter extends MouseAdapter {
         private final Modifier tableCellModifier;
 
+        private float row;
+        private float col;
+        private int layer;
+
         private MyMouseAdapter(Modifier tableCellModifier) {
             this.tableCellModifier = tableCellModifier;
         }
 
         @Override
+        public void mouseMoved(MouseEvent e) {
+            updateCurrentPosition(e);
+        }
+
+        @Override
         public void mouseClicked(MouseEvent mouseEvent) {
             if (kv != null) {
-                int x = (mouseEvent.getX() - xOffs) / cellSize - 1;
-                int y = (mouseEvent.getY() - yOffs) / cellSize - 1;
-                if (x >= 0 && x < kv.getColumns() && y >= 0 && y < kv.getRows()) {
-                    int row = kv.getCell(y, x).getBoolTableRow();
-                    tableCellModifier.modify(boolTable, row);
+                if (col >= 0 && col < kv.getColumns() && row >= 0 && row < kv.getRows()) {
+                    int tableRow = kv.getCell((int) Math.floor(row), (int) Math.floor(col), layer).getBoolTableRow();
+                    tableCellModifier.modify(boolTable, tableRow);
                 } else {
-                    if (x < 0) {
-                        mode = mode ^ 1;
-                        update();
-                    } else if (y < 0) {
-                        mode = mode ^ 4;
-                        update();
-                    } else if (x >= kv.getColumns()) {
-                        mode = mode ^ 2;
-                        update();
-                    } else if (y >= kv.getRows()) {
-                        mode = mode ^ 8;
+                    KarnaughMap.Header header = getHeader();
+                    if (header != null) {
+                        if (header == kv.getHeaderLeft()) {
+                            mode ^= 1;
+                        } else if (header == kv.getHeaderTop()) {
+                            mode ^= 4;
+                        } else if (header == kv.getHeaderRight()) {
+                            mode ^= 2;
+                        } else if (header == kv.getHeaderBottom()) {
+                            mode ^= 8;
+                        } else if (header == kv.getHeaderHyperTop()) {
+                            mode ^= 16;
+                        }
                         update();
                     }
                 }
@@ -325,11 +380,12 @@ public class KarnaughMapComponent extends JComponent {
 
         @Override
         public void mousePressed(MouseEvent e) {
-            startVar = getVarIndex(e);
+            startVar = getVarIndex(getHeader());
         }
 
         @Override
         public void mouseDragged(MouseEvent e) {
+            updateCurrentPosition(e);
             if (startVar >= 0) {
                 xDrag = e.getX();
                 yDrag = e.getY();
@@ -339,7 +395,7 @@ public class KarnaughMapComponent extends JComponent {
 
         @Override
         public void mouseReleased(MouseEvent e) {
-            int endVar = getVarIndex(e);
+            int endVar = getVarIndex(getHeader());
             if (endVar != startVar
                     && endVar >= 0 && startVar >= 0
                     && endVar < vars.size() && startVar <= vars.size()) {
@@ -365,19 +421,27 @@ public class KarnaughMapComponent extends JComponent {
             swap[endVar] = t;
         }
 
-        private int getVarIndex(MouseEvent mouseEvent) {
-            int x = (mouseEvent.getX() - xOffs) / cellSize - 1;
-            int y = (mouseEvent.getY() - yOffs) / cellSize - 1;
-            if (x < 0) {
-                return getVarIndex(kv.getHeaderLeft());
-            } else if (y < 0) {
-                return getVarIndex(kv.getHeaderTop());
-            } else if (x >= kv.getColumns()) {
-                return getVarIndex(kv.getHeaderRight());
-            } else if (y >= kv.getRows()) {
-                return getVarIndex(kv.getHeaderBottom());
+        private void updateCurrentPosition(MouseEvent mouseEvent) {
+            row = (float) (mouseEvent.getY() - yOffs) / cellSize - 1;
+            col = (float) (mouseEvent.getX() - xOffs) / cellSize - 1;
+            layer = vars.size() < 5 || mouseEvent.getX() < getWidth() / 2 ? 0 : 1;
+            if (layer == 1) col -= 6.25f;
+        }
+
+        private KarnaughMap.Header getHeader() {
+            int layers = kv.getLayers();
+            if (row < -1 && layers > 1) {
+                return kv.getHeaderHyperTop();
+            } else if (col < 0) {
+                return kv.getHeaderLeft();
+            } else if (row < 0 && (layers == 1 || layers > 1 && row >= -1)) {
+                return kv.getHeaderTop();
+            } else if (col >= kv.getColumns()) {
+                return kv.getHeaderRight();
+            } else if (row >= kv.getRows()) {
+                return kv.getHeaderBottom();
             }
-            return -1;
+            return null;
         }
 
         private int getVarIndex(KarnaughMap.Header header) {

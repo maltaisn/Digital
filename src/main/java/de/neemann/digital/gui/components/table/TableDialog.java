@@ -79,6 +79,8 @@ public class TableDialog extends JDialog {
     private static final Color ODDWHITE = new Color(255, 255, 220);
     private static final List<Key> LIST = new ArrayList<>();
 
+    private static final int KARNAUGH_MAP_MAX = 5;
+
     static {
         LIST.add(Keys.LABEL);
     }
@@ -294,7 +296,7 @@ public class TableDialog extends JDialog {
 
         setJMenuBar(bar);
 
-        karnaughMenuAction.setEnabled(undoManager.getActual().getVars().size() <= 4);
+        karnaughMenuAction.setEnabled(undoManager.getActual().getVars().size() <= KARNAUGH_MAP_MAX);
         calculateExpressions();
 
         getContentPane().add(new JScrollPane(table));
@@ -347,7 +349,7 @@ public class TableDialog extends JDialog {
      * Called if table was modified.
      */
     public void tableChanged() {
-        karnaughMenuAction.setEnabled(undoManager.getActual().getVars().size() <= 4);
+        karnaughMenuAction.setEnabled(undoManager.getActual().getVars().size() <= KARNAUGH_MAP_MAX);
         calculateExpressions();
         model.fireTableChanged();
     }
