@@ -84,6 +84,7 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
     private final JComboBox<InMode> formatComboBox;
     private final long mask;
     private JCheckBox[] checkBoxes;
+    private Border floatBorder;
     private long editValue;
 
     /**
@@ -206,7 +207,25 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
             checkBoxes[bit].addActionListener(actionEvent -> setBit(bit, checkBoxes[bit].isSelected()));
             p.add(checkBoxes[bit]);
         }
+        floatBorder = BorderFactory.createEmptyBorder(0, 0, 0, 10);
+        setFloatCheckBoxBorders();
         return p;
+    }
+
+    private void setFloatCheckBoxBorders() {
+        if (getSelectedFormat().equals(InMode.FLOAT)) {
+            if (value.getBits() == 32) {
+                checkBoxes[31].setBorder(floatBorder);
+                checkBoxes[23].setBorder(floatBorder);
+            } else {
+                checkBoxes[63].setBorder(floatBorder);
+                checkBoxes[52].setBorder(floatBorder);
+            }
+        } else {
+            for (JCheckBox checkBox : checkBoxes)
+                checkBox.setBorder(null);
+        }
+        pack();
     }
 
     private void setBit(int bitNum, boolean set) {
@@ -309,6 +328,7 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
             }
             for (int i = 0; i < checkBoxes.length; i++)
                 checkBoxes[i].setSelected((editValue & (1L << i)) != 0);
+            setFloatCheckBoxBorders();
         }
     }
 
