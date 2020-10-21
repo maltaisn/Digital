@@ -34,6 +34,10 @@ public enum IntFormat {
      */
     oct,
     /**
+     * IEEE 754 floating point
+     */
+    floatp,
+    /**
      * ascii format
      */
     ascii;
@@ -79,14 +83,12 @@ public enum IntFormat {
                 return "0b" + toBin(inValue);
             case oct:
                 return "0" + toOct(inValue);
+            case floatp:
+                return toFloat(inValue);
             case ascii:
                 return "'" + (char) inValue.getValue() + "'";
             default:
-                final long value = inValue.getValue();
-                if (value >= 0 && value < 10)
-                    return Long.toString(value);
-                else
-                    return "0x" + toShortHex(value, true);
+                return toDefault(inValue);
         }
     }
 
@@ -125,6 +127,14 @@ public enum IntFormat {
     }
 
     private static final char[] DIGITS = new char[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+
+    private static String toDefault(Value inValue) {
+        final long value = inValue.getValue();
+        if (value >= 0 && value < 10)
+            return Long.toString(value);
+        else
+            return "0x" + toShortHex(value, true);
+    }
 
     private static String toHex(Value inValue) {
         final int bits = inValue.getBits();
@@ -202,6 +212,74 @@ public enum IntFormat {
             mask <<= 1;
         }
         return new String(data);
+    }
+
+
+    public static final String FLOAT32_NAN = "NaNf";
+    public static final String FLOAT32_INF = "inff";
+    public static final String FLOAT64_NAN = "NaN";
+    public static final String FLOAT64_INF = "inf";
+
+    public static boolean isFloat32Literal(String value) {
+        if (value.length() == 0) return false;
+        value = value.toLowerCase();
+        if (value.charAt(0) == '-')
+            value = value.substring(1);
+        return value.endsWith("f") && !value.startsWith("0x") && !value.equalsIgnoreCase(FLOAT64_INF) ||
+                value.equalsIgnoreCase(FLOAT32_NAN) ||
+                value.equalsIgnoreCase(FLOAT32_INF);
+    }
+
+    public static boolean isFloat64Literal(String value) {
+        if (value.length() == 0) return false;
+        value = value.toLowerCase();
+        if (value.charAt(0) == '-')
+            value = value.substring(1);
+        return value.indexOf('.') >= 0 || !value.startsWith("0x") && value.indexOf('e') >= 1 ||
+                value.equalsIgnoreCase(FLOAT64_NAN) ||
+                value.equalsIgnoreCase(FLOAT64_INF);
+    }
+
+    public static String toFloat(Value inValue) {
+        switch (inValue.getBits()) {
+            case 32:
+                return formatFloat32Bits((int) inValue.getValue());
+            case 64:
+                return formatFloat64Bits(inValue.getValue());
+            default:
+                // No corresponding (supported) IEEE 754 format, use default format.
+                return toDefault(inValue);
+        }
+    }
+
+    public static String formatFloat32Bits(int value) {
+        float f = Float.intBitsToFloat(value);
+        if (Float.isNaN(f)) {
+            return FLOAT32_NAN;
+        } else if (Float.isInfinite(f)) {
+            return f > 0 ? FLOAT32_INF : "-" + FLOAT32_INF;
+        } else {
+            String str = Float.toString(f).toLowerCase();
+            if (str.endsWith(".0")) {
+                str = str.substring(0, str.length() - 2);
+            }
+            return str + "f";
+        }
+    }
+
+    public static String formatFloat64Bits(long value) {
+        double f = Double.longBitsToDouble(value);
+        if (Double.isNaN(f)) {
+            return FLOAT64_NAN;
+        } else if (Double.isInfinite(f)) {
+            return f > 0 ? FLOAT64_INF : "-" + FLOAT64_INF;
+        } else {
+            String str = Double.toString(f).toLowerCase();
+            if (str.indexOf('.') <= 0 && str.indexOf('e') <= 0) {
+                str += ".0";
+            }
+            return str;
+        }
     }
 
     /**

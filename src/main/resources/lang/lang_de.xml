@@ -19,6 +19,7 @@
     <string name="attr_dialogHighz">HighZ</string>
     <string name="attr_dialogOctal">Oktal</string>
     <string name="attr_dialogBinary">Binär</string>
+    <string name="attr_dialogFloat">Float</string>
     <string name="attr_panel_primary">Allgemein</string>
     <string name="attr_panel_secondary">Erweitert</string>
     <string name="btn_discard">Verwerfen</string>
@@ -1313,6 +1314,7 @@ Sind evtl. die Namen der Variablen nicht eindeutig?</string>
     <string name="key_intFormat_def">Vorgabe</string>
     <string name="key_intFormat_hex">Hexadezimal</string>
     <string name="key_intFormat_oct">Oktal</string>
+    <string name="key_intFormat_floatp">Floating point</string>
     <string name="key_barrelSigned">Verschiebeweite hat Vorzeichen</string><!-- BarrelShifter -->
     <string name="key_barrelSigned_tt">Verschiebeweite verwendet Zweierkomplement</string>
     <string name="key_barrelShifterMode">Modus</string><!-- BarrelShifter -->

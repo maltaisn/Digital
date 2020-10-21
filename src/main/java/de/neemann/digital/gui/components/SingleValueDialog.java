@@ -10,6 +10,7 @@ import de.neemann.digital.lang.Lang;
 import de.neemann.gui.Screen;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -18,6 +19,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
@@ -34,6 +36,7 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
         DECIMAL(Lang.get("attr_dialogDecimal")),
         BIN(Lang.get("attr_dialogBinary")),
         OCTAL(Lang.get("attr_dialogOctal")),
+        FLOAT(Lang.get("attr_dialogFloat")),
         ASCII(Lang.get("attr_dialogAscii")),
         HIGHZ(Lang.get("attr_dialogHighz"));
 
@@ -48,12 +51,11 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
             return langText;
         }
 
-        private static InMode[] values(boolean supportsHighZ) {
-            if (supportsHighZ) {
-                return values();
-            } else {
-                return Arrays.copyOf(values(), values().length - 1);
-            }
+        private static InMode[] values(boolean supportsHighZ, boolean supportsFloat) {
+            ArrayList<InMode> values = new ArrayList<>(Arrays.asList(values()));
+            if (!supportsHighZ) values.remove(InMode.HIGHZ);
+            if (!supportsFloat) values.remove(InMode.FLOAT);
+            return values.toArray(new InMode[0]);
         }
 
         private static InMode getByFormat(IntFormat format) {
@@ -65,6 +67,8 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
                     return SingleValueDialog.InMode.OCTAL;
                 case bin:
                     return SingleValueDialog.InMode.BIN;
+                case floatp:
+                    return SingleValueDialog.InMode.FLOAT;
                 case ascii:
                     return SingleValueDialog.InMode.ASCII;
                 default:
@@ -76,6 +80,7 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
     private final JTextField textField;
     private boolean textIsModifying;
     private final boolean supportsHighZ;
+    private final boolean supportsFloat;
     private final JComboBox<InMode> formatComboBox;
     private final long mask;
     private JCheckBox[] checkBoxes;
@@ -99,12 +104,13 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
 
         editValue = value.getValue();
         this.supportsHighZ = supportsHighZ;
+        this.supportsFloat = value.getBits() == 32 || value.getBits() == 64;
         mask = Bits.mask(value.getBits());
 
         textField = new JTextField(10);
         textField.setHorizontalAlignment(JTextField.RIGHT);
 
-        formatComboBox = new JComboBox<>(InMode.values(supportsHighZ));
+        formatComboBox = new JComboBox<>(InMode.values(supportsHighZ, supportsFloat));
         formatComboBox.addActionListener(actionEvent -> setLongToDialog(editValue));
 
         model.modify(() -> model.addObserver(this));
@@ -235,6 +241,13 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
                 case OCTAL:
                     textField.setText("0" + Long.toOctalString(editValue));
                     break;
+                case FLOAT:
+                    if (value.getBits() == 32) {
+                        textField.setText(IntFormat.formatFloat32Bits((int) editValue));
+                    } else if (value.getBits() == 64) {
+                        textField.setText(IntFormat.formatFloat64Bits(editValue));
+                    }
+                    break;
                 case HIGHZ:
                     textField.setText("Z");
                     break;
@@ -278,7 +291,9 @@ public final class SingleValueDialog extends JDialog implements ModelStateObserv
                     editValue = 0;
                 }
             } else {
-                if (text.startsWith("0x"))
+                if (supportsFloat && (IntFormat.isFloat32Literal(text) || IntFormat.isFloat64Literal(text))) {
+                    setSelectedFormat(InMode.FLOAT);
+                } else if (text.startsWith("0x"))
                     setSelectedFormat(InMode.HEX);
                 else if (text.startsWith("0b"))
                     setSelectedFormat(InMode.BIN);

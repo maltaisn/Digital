@@ -46,16 +46,68 @@ public class IntFormatTest extends TestCase {
         assertEquals("FFFFFFFFFFFFFFFF", IntFormat.def.formatToView(new Value(-1, 64)));
     }
 
+    public void testFloat32() throws Exception {
+        assertEquals("32f", IntFormat.floatp.formatToView(new Value(Float.floatToIntBits(32.0f), 32)));
+        assertEquals("-1f", IntFormat.floatp.formatToView(new Value(Float.floatToIntBits(-1f), 32)));
+        assertEquals("5.6e-4f", IntFormat.floatp.formatToView(new Value(Float.floatToIntBits(5.6e-4f), 32)));
+        assertEquals("NaNf", IntFormat.floatp.formatToView(new Value(Float.floatToIntBits(Float.NaN), 32)));
+        assertEquals("inff", IntFormat.floatp.formatToView(new Value(Float.floatToIntBits(Float.POSITIVE_INFINITY), 32)));
+        assertEquals("-inff", IntFormat.floatp.formatToView(new Value(Float.floatToIntBits(Float.NEGATIVE_INFINITY), 32)));
+    }
+
+    public void testFloat64() throws Exception {
+        assertEquals("32.0", IntFormat.floatp.formatToView(new Value(Double.doubleToLongBits(32.0), 64)));
+        assertEquals("-1.0", IntFormat.floatp.formatToView(new Value(Double.doubleToLongBits(-1.0), 64)));
+        assertEquals("5.6e-4", IntFormat.floatp.formatToView(new Value(Double.doubleToLongBits(5.6e-4), 64)));
+        assertEquals("NaN", IntFormat.floatp.formatToView(new Value(Double.doubleToLongBits(Double.NaN), 64)));
+        assertEquals("inf", IntFormat.floatp.formatToView(new Value(Double.doubleToLongBits(Double.POSITIVE_INFINITY), 64)));
+        assertEquals("-inf", IntFormat.floatp.formatToView(new Value(Double.doubleToLongBits(Double.NEGATIVE_INFINITY), 64)));
+    }
+
+    public void testIsFloat32Literal() {
+        assertTrue(IntFormat.isFloat32Literal("nanf"));
+        assertTrue(IntFormat.isFloat32Literal("inff"));
+        assertTrue(IntFormat.isFloat32Literal("-inff"));
+        assertTrue(IntFormat.isFloat32Literal("1.0f"));
+        assertTrue(IntFormat.isFloat32Literal("1.f"));
+        assertTrue(IntFormat.isFloat32Literal("1f"));
+        assertTrue(IntFormat.isFloat32Literal("1e0f"));
+        assertTrue(IntFormat.isFloat32Literal("-1.0e-9f"));
+        assertFalse(IntFormat.isFloat32Literal("0x1f"));
+        assertFalse(IntFormat.isFloat32Literal("0x1e9"));
+        assertFalse(IntFormat.isFloat32Literal("nan"));
+        assertFalse(IntFormat.isFloat32Literal("inf"));
+    }
+
+    public void testIsFloat64Literal() {
+        assertTrue(IntFormat.isFloat64Literal("nan"));
+        assertTrue(IntFormat.isFloat64Literal("inf"));
+        assertTrue(IntFormat.isFloat64Literal("-inf"));
+        assertTrue(IntFormat.isFloat64Literal("1.0"));
+        assertTrue(IntFormat.isFloat64Literal("1."));
+        assertTrue(IntFormat.isFloat64Literal("1e0"));
+        assertTrue(IntFormat.isFloat64Literal("-1.0e-9"));
+        assertFalse(IntFormat.isFloat64Literal("0x1e9"));
+        assertFalse(IntFormat.isFloat64Literal("nanf"));
+        assertFalse(IntFormat.isFloat64Literal("inff"));
+    }
+
     /**
      * Ensures that it is possible to convert a string representation obtained by {@link IntFormat#formatToEdit(Value)}
      * back to the same value by {@link Bits#decode(String)}
      */
     public void testBitDecodeConstraint() throws Bits.NumberFormatException {
         for (IntFormat f : IntFormat.values()) {
-            if (f == IntFormat.ascii) {
-                checkConstraint(f, tableAscii); // ascii supports only 16 bit
-            } else {
-                checkConstraint(f, table);
+            switch (f) {
+                case ascii:
+                    checkConstraint(f, tableAscii); // ascii supports only 16 bit
+                    break;
+                case floatp:
+                    checkConstraint(f, tableFloat); // avoids NaN canonicalization
+                    break;
+                default:
+                    checkConstraint(f, table);
+                    break;
             }
         }
     }
@@ -77,6 +129,14 @@ public class IntFormatTest extends TestCase {
             new Value(1000, 16),
             new Value(-1, 7),
             new Value(-1, 7),
+    };
+
+    private static final Value[] tableFloat = new Value[]{
+            new Value(Float.floatToIntBits(32f), 32),
+            new Value(Float.floatToIntBits(Float.NaN), 32),
+            new Value(Float.floatToIntBits(Float.NEGATIVE_INFINITY), 32),
+            new Value(Double.doubleToLongBits(5.3e-8), 64),
+            new Value(Double.doubleToLongBits(0.3), 64),
     };
 
     private void checkConstraint(IntFormat format, Value[] table) throws Bits.NumberFormatException {

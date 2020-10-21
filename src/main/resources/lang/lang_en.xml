@@ -18,6 +18,7 @@
     <string name="attr_dialogAscii">ASCII</string>
     <string name="attr_dialogHighz">HighZ</string>
     <string name="attr_dialogOctal">Octal</string>
+    <string name="attr_dialogFloat">Float</string>
     <string name="attr_dialogBinary">Binary</string>
     <string name="attr_panel_primary">Basic</string>
     <string name="attr_panel_secondary">Advanced</string>
@@ -1295,6 +1296,7 @@
     <string name="key_intFormat_def">Default</string>
     <string name="key_intFormat_hex">Hex</string>
     <string name="key_intFormat_oct">Octal</string>
+    <string name="key_intFormat_floatp">Floating point</string>
     <string name="key_barrelSigned">shift input has sign</string><!-- BarrelShifter -->
     <string name="key_barrelSigned_tt">shift input data has two complement format</string>
     <string name="key_barrelShifterMode">Mode</string><!-- BarrelShifter -->

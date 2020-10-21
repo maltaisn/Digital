@@ -6,6 +6,7 @@
 package de.neemann.digital.core.io;
 
 import de.neemann.digital.core.Bits;
+import de.neemann.digital.core.IntFormat;
 import de.neemann.digital.core.ObservableValue;
 
 /**
@@ -16,6 +17,7 @@ public class InValue {
 
     private final long value;
     private final boolean highZ;
+    private final int floatBits;
 
     /**
      * Creates a new value
@@ -25,6 +27,7 @@ public class InValue {
     public InValue(long value) {
         this.value = value;
         this.highZ = false;
+        this.floatBits = 0;
     }
 
     /**
@@ -33,6 +36,7 @@ public class InValue {
      * @param value the value
      */
     public InValue(ObservableValue value) {
+        this.floatBits = 0;
         if (value.isHighZ()) {
             this.highZ = true;
             this.value = 0;
@@ -49,14 +53,22 @@ public class InValue {
      * @throws Bits.NumberFormatException NumberFormatException
      */
     public InValue(String value) throws Bits.NumberFormatException {
-        if (value.trim().equalsIgnoreCase("z")) {
+        value = value.trim();
+        if (value.equalsIgnoreCase("z")) {
             this.highZ = true;
+            this.floatBits = 0;
             this.value = 0;
         } else {
             this.highZ = false;
-            this.value = Bits.decode(value.trim());
+            if (IntFormat.isFloat32Literal(value)) {
+                this.floatBits = 32;
+            } else if (IntFormat.isFloat64Literal(value)) {
+                this.floatBits = 64;
+            } else {
+                this.floatBits = 0;
+            }
+            this.value = Bits.decode(value);
         }
-
     }
 
     /**
@@ -73,10 +85,21 @@ public class InValue {
         return highZ;
     }
 
+    /**
+     * @return the bit width if value is floating point.
+     */
+    public int getFloatBits() {
+        return floatBits;
+    }
+
     @Override
     public String toString() {
         if (highZ)
             return "Z";
+        else if (floatBits == 32)
+            return IntFormat.formatFloat32Bits((int) value);
+        else if (floatBits == 64)
+            return IntFormat.formatFloat64Bits(value);
         else
             return Long.toString(value);
     }
@@ -89,13 +112,14 @@ public class InValue {
         InValue inValue = (InValue) o;
 
         if (value != inValue.value) return false;
-        return highZ == inValue.highZ;
+        return highZ == inValue.highZ && floatBits == inValue.floatBits;
     }
 
     @Override
     public int hashCode() {
         int result = (int) (value ^ (value >>> 32));
         result = 31 * result + (highZ ? 1 : 0);
+        result = 31 * result + floatBits;
         return result;
     }
 }

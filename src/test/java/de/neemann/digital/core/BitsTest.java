@@ -91,6 +91,22 @@ public class BitsTest extends TestCase {
         assertEquals(42, Bits.decode("'*'"));
     }
 
+    public void testDecodeFloat() throws Bits.NumberFormatException {
+        assertEquals(Float.floatToIntBits(1f), Bits.decode("1f"));
+        assertEquals(Float.floatToIntBits(1f), Bits.decode("1e0F"));
+        assertEquals(Float.floatToIntBits(-32f), Bits.decode("-32f"));
+        assertEquals(Float.floatToIntBits(Float.POSITIVE_INFINITY), Bits.decode("inff"));
+        assertEquals(Float.floatToIntBits(Float.NEGATIVE_INFINITY), Bits.decode("-inff"));
+        assertEquals(Float.floatToIntBits(Float.NaN), Bits.decode("-nAnF"));
+
+        assertEquals(Double.doubleToLongBits(1.0), Bits.decode("1.0"));
+        assertEquals(Double.doubleToLongBits(1.0), Bits.decode("1.0000e0"));
+        assertEquals(Double.doubleToLongBits(-32.0), Bits.decode("-32.0"));
+        assertEquals(Double.doubleToLongBits(Double.POSITIVE_INFINITY), Bits.decode("inf"));
+        assertEquals(Double.doubleToLongBits(Double.NEGATIVE_INFINITY), Bits.decode("-inf"));
+        assertEquals(Double.doubleToLongBits(Double.NaN), Bits.decode("-nAn"));
+    }
+
     public void testDecodeInvalid() {
         checkInvalid("-");
         checkInvalid("1h");

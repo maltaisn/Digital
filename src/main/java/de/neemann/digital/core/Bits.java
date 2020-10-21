@@ -127,7 +127,7 @@ public final class Bits {
 
     /**
      * Decodes a string to a long.
-     * Supports decimal, octal, hex, binary and ascii
+     * Supports decimal, octal, hex, binary, float and ascii
      *
      * @param str the string
      * @return the long value
@@ -141,6 +141,20 @@ public final class Bits {
 
         if (str.length() == 0)
             return 0;
+
+        if (IntFormat.isFloat32Literal(str)) {
+            try {
+                return parseFloatBits(str);
+            } catch (java.lang.NumberFormatException e) {
+                throw new NumberFormatException(str, 0);
+            }
+        } else if (IntFormat.isFloat64Literal(str)) {
+            try {
+                return parseDoubleBits(str);
+            } catch (java.lang.NumberFormatException e) {
+                throw new NumberFormatException(str, 0);
+            }
+        }
 
         int p = 0;
 
@@ -217,6 +231,38 @@ public final class Bits {
             p++;
         }
         return val;
+    }
+
+    public static long parseFloatBits(String value) {
+        float f;
+        float sign = value.charAt(0) == '-' ? -1f : 1f;
+        if (sign < 0) {
+            value = value.substring(1);
+        }
+        if (value.equalsIgnoreCase(IntFormat.FLOAT32_NAN)) {
+            f = Float.NaN;
+        } else if (value.equalsIgnoreCase(IntFormat.FLOAT32_INF)) {
+            f = Float.POSITIVE_INFINITY;
+        } else {
+            f = Float.parseFloat(value);
+        }
+        return Float.floatToIntBits(sign * f);
+    }
+
+    public static long parseDoubleBits(String value) {
+        double f;
+        double sign = value.charAt(0) == '-' ? -1f : 1f;
+        if (sign < 0) {
+            value = value.substring(1);
+        }
+        if (value.equalsIgnoreCase(IntFormat.FLOAT64_NAN)) {
+            f = Double.NaN;
+        } else if (value.equalsIgnoreCase(IntFormat.FLOAT64_INF)) {
+            f = Double.POSITIVE_INFINITY;
+        } else {
+            f = Double.parseDouble(value);
+        }
+        return Double.doubleToLongBits(sign * f);
     }
 
     /**

@@ -82,6 +82,7 @@ public class Circuit implements Copyable<Circuit> {
         xStream.alias("value", InValue.class);
         xStream.aliasAttribute(InValue.class, "value", "v");
         xStream.aliasAttribute(InValue.class, "highZ", "z");
+        xStream.aliasAttribute(InValue.class, "floatBits", "floatBits");
         xStream.addImplicitCollection(ElementAttributes.class, "attributes");
         xStream.alias("data", DataField.class);
         xStream.registerConverter(new DataFieldConverter());
