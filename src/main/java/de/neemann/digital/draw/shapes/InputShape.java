@@ -5,6 +5,8 @@
  */
 package de.neemann.digital.draw.shapes;
 
+import java.awt.*;
+
 import de.neemann.digital.core.*;
 import de.neemann.digital.core.element.Element;
 import de.neemann.digital.core.element.ElementAttributes;
@@ -19,8 +21,6 @@ import de.neemann.digital.draw.graphics.*;
 import de.neemann.digital.gui.components.CircuitComponent;
 import de.neemann.digital.gui.components.SingleValueDialog;
 import de.neemann.gui.Screen;
-
-import java.awt.*;
 
 import static de.neemann.digital.draw.shapes.GenericShape.SIZE2;
 import static de.neemann.digital.draw.shapes.OutputShape.*;
@@ -190,8 +190,19 @@ public class InputShape implements Shape {
                     lastValueSet = startValue;
                 } else {
                     int delta = startPos.y - posOnScreen.y;
-                    long v = startValue + (delta * max) / SLIDER_HEIGHT;
-                    long val = Math.max(min, Math.min(v, max));
+                    long val;
+                    if (format == IntFormat.floatp) {
+                        if (bits == 32) {
+                            val = Float.floatToIntBits((float) getDragValueFloat(
+                                    Float.intBitsToFloat((int) startValue), delta, Float.MAX_EXPONENT));
+                        } else {
+                            val = Double.doubleToLongBits(getDragValueFloat(
+                                    Double.longBitsToDouble(startValue), delta, Double.MAX_EXPONENT));
+                        }
+                    } else {
+                        long v = startValue + (delta * max) / SLIDER_HEIGHT;
+                        val = Math.max(min, Math.min(v, max));
+                    }
                     if (val != lastValueSet) {
                         modelSync.modify(() -> value.setValue(val));
                         lastValueSet = val;
@@ -199,5 +210,26 @@ public class InputShape implements Shape {
                 }
             }
         }
+
+        private double getDragValueFloat(double start, int delta, int maxExponent) {
+            // Float range is pretty large compared to usual integer ranges.
+            // The following allows to get to a value in two steps: from 0, sign and order of magnitude
+            // is chosen, then a second drag can be used to adjust more precisely within magnitude.
+            // To start over, dragging all the way down resets the value to zero.
+            if (Double.isFinite(start)) {
+                double exponent = Math.pow((double) delta / SLIDER_HEIGHT, 7.0) * maxExponent;
+                if (start == 0.0) {
+                    exponent = Math.abs(exponent);
+                    start = Math.signum(delta);
+                } else {
+                    exponent += Math.log(Math.abs(start)) / Math.log(2);
+                }
+                return Math.pow(2.0, exponent) * Math.signum(start);
+            } else {
+                // Special case to prevent getting stuck on NaN/inf.
+                return Math.abs(delta) > SLIDER_HEIGHT / 10 ? 0.0 : start;
+            }
+        }
+
     }
 }
