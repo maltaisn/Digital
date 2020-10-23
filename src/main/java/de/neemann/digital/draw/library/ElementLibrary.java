@@ -7,6 +7,7 @@ package de.neemann.digital.draw.library;
 
 import de.neemann.digital.core.arithmetic.*;
 import de.neemann.digital.core.arithmetic.Comparator;
+import de.neemann.digital.core.arithmetic.Random;
 import de.neemann.digital.core.basic.*;
 import de.neemann.digital.core.element.ElementAttributes;
 import de.neemann.digital.core.element.ElementTypeDescription;
@@ -225,6 +226,7 @@ public class ElementLibrary implements Iterable<ElementLibrary.ElementContainer>
                 .add(new LibraryNode(Lang.get("lib_misc"))
                         .add(TestCaseElement.DESCRIPTION)
                         .add(GenericInitCode.DESCRIPTION)
+                        .add(Random.DESCRIPTION)
                         .add(DummyElement.RECTDESCRIPTION)
                         .add(PowerSupply.DESCRIPTION)
                         .add(BusSplitter.DESCRIPTION)

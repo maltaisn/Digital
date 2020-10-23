@@ -996,6 +996,13 @@
         Kann verwendet werden, um ein "Wired AND" oder ein "Wired OR" zu implementieren.
         Es handelt sich um eine ideale Diode: In Durchlassrichtung gibt es keinen Spannungabfall über der Diode.</string>
 
+    <string name="elem_Random">Random bits</string>
+    <string name="elem_Random_short">Random</string>
+    <string name="elem_Random_tt">Returns random bits on the rising edge of the clock.
+        An adder or a divider can be used to restrict the bits to an interval.
+    </string>
+    <string name="elem_Random_pin_C">The Clock input. A rising edge generates random bits.</string>
+    <string name="elem_Random_pin_out">Outputs random bits.</string>
 
     <string name="error">Fehler</string>
     <string name="err_N_isNotInputOrOutput">Pin {0} in Element {1} ist weder Eingang noch Ausgang</string>

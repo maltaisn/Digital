@@ -819,7 +819,6 @@
     <string name="elem_BitCount_pin_in">The input which 1-bits are counted.</string>
     <string name="elem_BitCount_pin_out">Outputs the number of 1-bits.</string>
 
-
     <!-- Switches -->
 
     <string name="elem_DiodeForward">Diode to VDD</string>
@@ -969,6 +968,14 @@
     <string name="elem_Diode_tt">Simplified bidirectional diode. It is used to implement a wired AND or a wired OR.
         This is a ideal diode: There is no voltage drop across a forward-biased diode.
     </string>
+
+    <string name="elem_Random">Random bits</string>
+    <string name="elem_Random_short">Random</string>
+    <string name="elem_Random_tt">Returns random bits on the rising edge of the clock.
+        An adder or a divider can be used to restrict the bits to an interval.
+    </string>
+    <string name="elem_Random_pin_C">The Clock input. A rising edge generates random bits.</string>
+    <string name="elem_Random_pin_out">Outputs random bits.</string>
 
 
     <string name="error">Error</string>
