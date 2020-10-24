@@ -223,7 +223,7 @@ public enum IntFormat {
     public static boolean isFloat32Literal(String value) {
         if (value.length() == 0) return false;
         value = value.toLowerCase();
-        if (value.charAt(0) == '-')
+        if (value.charAt(0) == '-' || value.charAt(0) == '+')
             value = value.substring(1);
         return value.endsWith("f") && !value.startsWith("0x") && !value.equalsIgnoreCase(FLOAT64_INF) ||
                 value.equalsIgnoreCase(FLOAT32_NAN) ||
@@ -233,7 +233,7 @@ public enum IntFormat {
     public static boolean isFloat64Literal(String value) {
         if (value.length() == 0) return false;
         value = value.toLowerCase();
-        if (value.charAt(0) == '-')
+        if (value.charAt(0) == '-' || value.charAt(0) == '+')
             value = value.substring(1);
         return value.indexOf('.') >= 0 || !value.startsWith("0x") && value.indexOf('e') >= 1 ||
                 value.equalsIgnoreCase(FLOAT64_NAN) ||

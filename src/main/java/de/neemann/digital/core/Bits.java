@@ -236,7 +236,7 @@ public final class Bits {
     public static long parseFloatBits(String value) {
         float f;
         float sign = value.charAt(0) == '-' ? -1f : 1f;
-        if (sign < 0) {
+        if (value.charAt(0) == '-' || value.charAt(0) == '+') {
             value = value.substring(1);
         }
         if (value.equalsIgnoreCase(IntFormat.FLOAT32_NAN)) {
@@ -252,7 +252,7 @@ public final class Bits {
     public static long parseDoubleBits(String value) {
         double f;
         double sign = value.charAt(0) == '-' ? -1f : 1f;
-        if (sign < 0) {
+        if (value.charAt(0) == '-' || value.charAt(0) == '+') {
             value = value.substring(1);
         }
         if (value.equalsIgnoreCase(IntFormat.FLOAT64_NAN)) {
