@@ -15,6 +15,7 @@ import de.neemann.gui.Screen;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 
 import static de.neemann.digital.draw.shapes.GenericShape.SIZE;
@@ -339,13 +340,14 @@ public class VisualElement implements Drawable, Movable, AttributeListener {
      * The call is delegated to the {@link Interactor} of the {@link Shape}
      *
      * @param cc             the calling {@link CircuitComponent}
+     * @param mouseEvent     the mouse event
      * @param pos            the position
      * @param posInComponent position in CircuitComponent
      * @param modelSync      used to access the running model
      */
-    public void elementClicked(CircuitComponent cc, Point pos, Vector posInComponent, SyncAccess modelSync) {
+    public void elementClicked(CircuitComponent cc, MouseEvent mouseEvent, Point pos, Vector posInComponent, SyncAccess modelSync) {
         if (interactor != null)
-            interactor.clicked(cc, pos, ioState, element, modelSync);
+            interactor.clicked(cc, mouseEvent, pos, ioState, element, modelSync);
     }
 
     /**
@@ -353,13 +355,14 @@ public class VisualElement implements Drawable, Movable, AttributeListener {
      * The call is delegated to the {@link Interactor} of the {@link Shape}
      *
      * @param cc             the calling {@link CircuitComponent}
+     * @param mouseEvent     the mouse event
      * @param pos            the position
      * @param posInComponent position in CircuitComponent
      * @param modelSync      used to access the running model
      */
-    public void elementPressed(CircuitComponent cc, Point pos, Vector posInComponent, SyncAccess modelSync) {
+    public void elementPressed(CircuitComponent cc, MouseEvent mouseEvent, Point pos, Vector posInComponent, SyncAccess modelSync) {
         if (interactor != null)
-            interactor.pressed(cc, pos, ioState, element, modelSync);
+            interactor.pressed(cc, mouseEvent, pos, ioState, element, modelSync);
     }
 
     /**
@@ -367,13 +370,14 @@ public class VisualElement implements Drawable, Movable, AttributeListener {
      * The call is delegated to the {@link Interactor} of the {@link Shape}
      *
      * @param cc             the calling {@link CircuitComponent}
+     * @param mouseEvent     the mouse event
      * @param pos            the position
      * @param posInComponent position in CircuitComponent
      * @param modelSync      used to access the running model
      */
-    public void elementReleased(CircuitComponent cc, Point pos, Vector posInComponent, SyncAccess modelSync) {
+    public void elementReleased(CircuitComponent cc, MouseEvent mouseEvent, Point pos, Vector posInComponent, SyncAccess modelSync) {
         if (interactor != null)
-            interactor.released(cc, pos, ioState, element, modelSync);
+            interactor.released(cc, mouseEvent, pos, ioState, element, modelSync);
     }
 
     /**
@@ -381,13 +385,14 @@ public class VisualElement implements Drawable, Movable, AttributeListener {
      * The call is delegated to the {@link Interactor} of the {@link Shape}
      *
      * @param cc             the calling {@link CircuitComponent}
+     * @param mouseEvent     the mouse event
      * @param pos            the position
      * @param posInComponent position in CircuitComponent
      * @param modelSync      used to access the running model
      */
-    public void elementDragged(CircuitComponent cc, Point pos, Vector posInComponent, SyncAccess modelSync) {
+    public void elementDragged(CircuitComponent cc, MouseEvent mouseEvent, Point pos, Vector posInComponent, SyncAccess modelSync) {
         if (interactor != null)
-            interactor.dragged(cc, pos, posInComponent, getTransform(), ioState, element, modelSync);
+            interactor.dragged(cc, mouseEvent, pos, posInComponent, getTransform(), ioState, element, modelSync);
     }
 
 

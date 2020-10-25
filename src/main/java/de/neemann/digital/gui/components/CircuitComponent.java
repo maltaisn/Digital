@@ -2494,7 +2494,7 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
     }
 
     private interface Actor {
-        void interact(CircuitComponent cc, Point p, Vector posInComponent, SyncAccess modelSync);
+        void interact(CircuitComponent cc, MouseEvent mouseEvent, Point p, Vector posInComponent, SyncAccess modelSync);
     }
 
     private final class MouseControllerRun extends MouseController {
@@ -2508,7 +2508,8 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
         void pressed(MouseEvent e) {
             VisualElement ve = getInteractiveElementAt(e);
             if (ve != null) {
-                interact(e, (cc, pos, posInComponent, modelSync1) -> ve.elementPressed(cc, pos, posInComponent, modelSync1));
+                interact(e, (cc, btn, pos, posInComponent, modelSync1) ->
+                        ve.elementPressed(cc, e, pos, posInComponent, modelSync1));
                 draggedElement = ve;
             } else
                 draggedElement = null;
@@ -2527,7 +2528,8 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
         @Override
         void released(MouseEvent e) {
             if (draggedElement != null) {
-                interact(e, (cc, pos, posInComponent, modelSync1) -> draggedElement.elementReleased(cc, pos, posInComponent, modelSync1));
+                interact(e, (cc, btn, pos, posInComponent, modelSync1) ->
+                        draggedElement.elementReleased(cc, e, pos, posInComponent, modelSync1));
                 draggedElement = null;
             }
         }
@@ -2536,13 +2538,15 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
         void clicked(MouseEvent e) {
             VisualElement ve = getInteractiveElementAt(e);
             if (ve != null)
-                interact(e, (cc, pos, posInComponent, modelSync1) -> ve.elementClicked(cc, pos, posInComponent, modelSync1));
+                interact(e, (cc, mouseEvent, pos, posInComponent, modelSync1) ->
+                        ve.elementClicked(cc, e, pos, posInComponent, modelSync1));
         }
 
         @Override
         boolean dragged(MouseEvent e) {
             if (draggedElement != null) {
-                interact(e, (cc, pos, posInComponent, modelSync1) -> draggedElement.elementDragged(cc, pos, posInComponent, modelSync1));
+                interact(e, (cc, mouseEvent, pos, posInComponent, modelSync1) ->
+                        draggedElement.elementDragged(cc, e, pos, posInComponent, modelSync1));
                 return true;
             } else
                 return false;
@@ -2551,7 +2555,7 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
         private void interact(MouseEvent e, Actor actor) {
             Point p = new Point(e.getX(), e.getY());
             SwingUtilities.convertPointToScreen(p, CircuitComponent.this);
-            actor.interact(CircuitComponent.this, p, getPosVector(e), modelSync);
+            actor.interact(CircuitComponent.this, e, p, getPosVector(e), modelSync);
         }
     }
 

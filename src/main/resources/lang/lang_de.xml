@@ -50,6 +50,7 @@
     <string name="btn_loadSvg">Import</string>
     <string name="btn_loadSvg_tt">Importieren einer SVG-Datei. Um eine geeignete SVG Datei zu erstellen, ist es
         am einfachsten zunächst ein Template zu erzeugen und dieses dann zu bearbeiten.</string>
+    <string name="btn_copyValue">Copy value</string>
     <string name="msg_warning">Warnung</string>
     <string name="cancel">Abbrechen</string>
     <string name="digital">Digital</string>

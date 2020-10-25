@@ -50,6 +50,7 @@
     <string name="btn_loadSvg">Import</string>
     <string name="btn_loadSvg_tt">Import an SVG file. To create a suitable SVG file, it is easiest to first create
         a SVG template and then edit it.</string>
+    <string name="btn_copyValue">Copy value</string>
     <string name="msg_warning">Warning</string>
     <string name="cancel">Cancel</string>
     <string name="digital">Digital</string>

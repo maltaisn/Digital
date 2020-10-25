@@ -17,6 +17,7 @@ import de.neemann.digital.draw.graphics.Polygon;
 import de.neemann.digital.gui.components.CircuitComponent;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 import static de.neemann.digital.draw.shapes.GenericShape.SIZE;
 import static de.neemann.digital.draw.shapes.GenericShape.SIZE2;
@@ -60,20 +61,20 @@ public class RotEncoderShape implements Shape {
             private boolean initial;
 
             @Override
-            public void clicked(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+            public void clicked(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
             }
 
             @Override
-            public void pressed(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+            public void pressed(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
                 initial = true;
             }
 
             @Override
-            public void released(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+            public void released(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
             }
 
             @Override
-            public void dragged(CircuitComponent cc, Point posOnScreen, Vector pos, Transform trans, IOState ioState, Element element, SyncAccess modelSync) {
+            public void dragged(CircuitComponent cc, MouseEvent mouseEvent, Point posOnScreen, Vector pos, Transform trans, IOState ioState, Element element, SyncAccess modelSync) {
                 if (ioState != null) {
                     Vector p = pos.sub(trans.transform(CENTER));
                     final int dist = p.x * p.x + p.y * p.y;

@@ -5,6 +5,9 @@
  */
 package de.neemann.digital.draw.shapes;
 
+import java.awt.*;
+import java.awt.event.MouseEvent;
+
 import de.neemann.digital.core.*;
 import de.neemann.digital.core.element.Element;
 import de.neemann.digital.core.element.ElementAttributes;
@@ -19,8 +22,6 @@ import de.neemann.digital.draw.graphics.*;
 import de.neemann.digital.gui.components.CircuitComponent;
 import de.neemann.digital.gui.components.SingleValueDialog;
 import de.neemann.gui.Screen;
-
-import java.awt.*;
 
 import static de.neemann.digital.draw.shapes.GenericShape.SIZE2;
 import static de.neemann.digital.draw.shapes.OutputShape.*;
@@ -147,7 +148,7 @@ public class InputShape implements Shape {
         private long lastValueSet;
 
         @Override
-        public void clicked(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+        public void clicked(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
             ObservableValue value = ioState.getOutput(0);
             if (bits == 1) {
                 modelSync.modify(() -> {
@@ -175,12 +176,12 @@ public class InputShape implements Shape {
         }
 
         @Override
-        public void pressed(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+        public void pressed(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
             isDrag = false;
         }
 
         @Override
-        public void dragged(CircuitComponent cc, Point posOnScreen, Vector pos, Transform transform, IOState ioState, Element element, SyncAccess modelSync) {
+        public void dragged(CircuitComponent cc, MouseEvent mouseEvent, Point posOnScreen, Vector pos, Transform transform, IOState ioState, Element element, SyncAccess modelSync) {
             ObservableValue value = ioState.getOutput(0);
             if (bits > 1 && !value.isHighZ()) {
                 if (!isDrag) {

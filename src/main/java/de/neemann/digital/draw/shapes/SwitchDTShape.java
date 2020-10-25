@@ -22,6 +22,7 @@ import de.neemann.digital.draw.graphics.Vector;
 import de.neemann.digital.gui.components.CircuitComponent;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 import static de.neemann.digital.draw.shapes.GenericShape.SIZE;
 import static de.neemann.digital.draw.shapes.GenericShape.SIZE2;
@@ -66,7 +67,7 @@ public class SwitchDTShape implements Shape {
     public InteractorInterface applyStateMonitor(IOState ioState) {
         return new Interactor() {
             @Override
-            public void clicked(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+            public void clicked(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
                 closed = !closed;
                 if (ioState != null)
                     modelSync.modify(() -> ((SwitchDT) element).setClosed(closed));

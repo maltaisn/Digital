@@ -18,6 +18,7 @@ import de.neemann.digital.draw.graphics.Polygon;
 import de.neemann.digital.gui.components.CircuitComponent;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 import static de.neemann.digital.draw.shapes.OutputShape.OUT_SIZE;
 
@@ -54,21 +55,21 @@ public class ButtonShape implements Shape {
         this.button = (Button) ioState.getElement();
         return new InteractorInterface() {
             @Override
-            public void clicked(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+            public void clicked(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
             }
 
             @Override
-            public void pressed(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+            public void pressed(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
                 modelSync.modify(() -> button.setPressed(true));
             }
 
             @Override
-            public void released(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+            public void released(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
                 modelSync.modify(() -> button.setPressed(false));
             }
 
             @Override
-            public void dragged(CircuitComponent cc, Point posOnScreen, Vector pos, Transform trans, IOState ioState, Element element, SyncAccess modelSync) {
+            public void dragged(CircuitComponent cc, MouseEvent mouseEvent, Point posOnScreen, Vector pos, Transform trans, IOState ioState, Element element, SyncAccess modelSync) {
             }
         };
     }

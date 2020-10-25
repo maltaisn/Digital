@@ -32,6 +32,7 @@ public class Probe implements Element {
     private final IntFormat format;
     private final boolean showInGraph;
     private ObservableValue value;
+    private Model model;
 
     /**
      * Creates a new instance
@@ -58,6 +59,14 @@ public class Probe implements Element {
     public void registerNodes(Model model) {
         model.addSignal(new Signal(label, value).setShowInGraph(showInGraph).setFormat(format).setTestOutput());
         model.registerGlobalValue(label, value);
+        this.model = model;
+    }
+
+    /**
+     * @return the model this input is attached to
+     */
+    public Model getModel() {
+        return model;
     }
 
 }

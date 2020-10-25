@@ -20,6 +20,7 @@ import de.neemann.digital.gui.components.CircuitComponent;
 import de.neemann.digital.gui.components.DataEditor;
 
 import java.awt.*;
+import java.awt.event.MouseEvent;
 
 /**
  * The RAM shape
@@ -69,7 +70,7 @@ public class RAMShape extends GenericShape {
     public Interactor applyStateMonitor(IOState ioState) {
         return new Interactor() {
             @Override
-            public void clicked(CircuitComponent cc, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
+            public void clicked(CircuitComponent cc, MouseEvent mouseEvent, Point pos, IOState ioState, Element element, SyncAccess modelSync) {
                 if (element instanceof RAMInterface) {
                     RAMInterface ram = (RAMInterface) element;
                     DataField dataField = ram.getMemory();
