@@ -180,6 +180,19 @@ public class Value {
         }
     }
 
+    public String toStringWithFormat(IntFormat format, int bits) {
+        switch (type) {
+            case HIGHZ:
+                return "Z";
+            case DONTCARE:
+                return "X";
+            case CLOCK:
+                return "C";
+            default:
+                return format.formatToView(new de.neemann.digital.core.Value(value, bits));
+        }
+    }
+
     /**
      * @return type of value
      */

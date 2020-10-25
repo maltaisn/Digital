@@ -5,6 +5,7 @@
  */
 package de.neemann.digital.testing;
 
+import de.neemann.digital.core.IntFormat;
 import de.neemann.digital.core.ObservableValue;
 import de.neemann.digital.data.Value;
 import de.neemann.digital.lang.Lang;
@@ -42,6 +43,15 @@ public class MatchedValue extends Value {
             return super.toString();
         else
             return Lang.get("msg_testExp_N0_found_N1", expected, super.toString());
+    }
+
+    @Override
+    public String toStringWithFormat(IntFormat format, int bits) {
+        if (isPassed())
+            return super.toStringWithFormat(format, bits);
+        else
+            return Lang.get("msg_testExp_N0_found_N1", expected.toStringWithFormat(format, bits),
+                super.toStringWithFormat(format, bits));
     }
 
     @Override

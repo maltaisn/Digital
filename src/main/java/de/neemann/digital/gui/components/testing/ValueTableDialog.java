@@ -5,11 +5,28 @@
  */
 package de.neemann.digital.gui.components.testing;
 
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.DefaultTableCellRenderer;
+
 import de.neemann.digital.core.ErrorDetector;
+import de.neemann.digital.core.IntFormat;
+import de.neemann.digital.core.element.ElementAttributes;
+import de.neemann.digital.core.element.Keys;
+import de.neemann.digital.core.io.In;
+import de.neemann.digital.core.io.Out;
 import de.neemann.digital.data.Value;
 import de.neemann.digital.data.ValueTable;
 import de.neemann.digital.data.ValueTableModel;
 import de.neemann.digital.draw.elements.Circuit;
+import de.neemann.digital.draw.elements.VisualElement;
 import de.neemann.digital.draw.library.ElementLibrary;
 import de.neemann.digital.gui.Main;
 import de.neemann.digital.gui.SaveAsHelper;
@@ -24,16 +41,6 @@ import de.neemann.gui.IconCreator;
 import de.neemann.gui.LineBreaker;
 import de.neemann.gui.MyFileChooser;
 import de.neemann.gui.ToolTipAction;
-
-import javax.swing.*;
-import javax.swing.filechooser.FileNameExtensionFilter;
-import javax.swing.table.DefaultTableCellRenderer;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.Collections;
 
 /**
  * Dialog to show the testing results.
@@ -180,7 +187,7 @@ public class ValueTableDialog extends JDialog {
     private JTable createTable(ValueTableHolder valueTableHolder) {
         ValueTableModel vtm = new ValueTableModel(valueTableHolder.valueTable);
         JTable table = new JTable(vtm);
-        table.setDefaultRenderer(Value.class, new ValueRenderer());
+        table.setDefaultRenderer(Value.class, createValueRenderer(valueTableHolder.valueTable));
         table.setDefaultRenderer(Integer.class, new NumberRenderer());
         table.addMouseListener(new MouseAdapter() {
             @Override
@@ -201,6 +208,29 @@ public class ValueTableDialog extends JDialog {
         return table;
     }
 
+    private ValueRenderer createValueRenderer(ValueTable valueTable) {
+        ArrayList<VisualElement> ioElements = new ArrayList<>();
+        for (VisualElement ve : ((Main) owner).getCircuitComponent().getCircuit().getElements()) {
+            if (ve.equalsDescription(In.DESCRIPTION) || ve.equalsDescription(Out.DESCRIPTION)) {
+                ioElements.add(ve);
+            }
+        }
+
+        ArrayList<ElementAttributes> ioAttributes = new ArrayList<>();
+        for (int col = 0; col < valueTable.getColumns(); col++) {
+            boolean found = false;
+            for (VisualElement ve : ioElements) {
+                if (valueTable.getColumnName(col).equals(ve.getElementAttributes().getLabel())) {
+                    ioAttributes.add(ve.getElementAttributes());
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) ioAttributes.add(null);
+        }
+        return new ValueRenderer(ioAttributes);
+    }
+
     /**
      * Disable the show as graph function
      *
@@ -213,12 +243,21 @@ public class ValueTableDialog extends JDialog {
 
     private static class ValueRenderer extends DefaultTableCellRenderer {
 
+        private final ArrayList<ElementAttributes> ioAttributes;
+
+        private ValueRenderer(ArrayList<ElementAttributes> ioAttributes) {
+            this.ioAttributes = ioAttributes;
+        }
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus, int row, int column) {
             JLabel comp = (JLabel) super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
             Value v = (Value) value;
             if (v != null) {
-                comp.setText(v.toString());
+                ElementAttributes attributes = ioAttributes.get(column - 1);
+                IntFormat format = attributes.get(Keys.INT_FORMAT);
+                int bits = attributes.getBits();
+                comp.setText(v.toStringWithFormat(format, bits));
                 comp.setHorizontalAlignment(JLabel.CENTER);
 
                 switch (((Value) value).getState()) {
