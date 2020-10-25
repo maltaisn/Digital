@@ -15,6 +15,9 @@ import java.util.Collections;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.DefaultTableColumnModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 
 import de.neemann.digital.core.ErrorDetector;
 import de.neemann.digital.core.IntFormat;
@@ -203,6 +206,33 @@ public class ValueTableDialog extends JDialog {
                 }
             }
         });
+
+        // Set preferred widths on columns.
+        for (int col = 0; col < table.getColumnCount(); col++) {
+            DefaultTableColumnModel colModel = (DefaultTableColumnModel) table.getColumnModel();
+            TableColumn column = colModel.getColumn(col);
+            int width;
+
+            TableCellRenderer renderer = column.getHeaderRenderer();
+            if (renderer == null) {
+                renderer = table.getTableHeader().getDefaultRenderer();
+            }
+            Component comp = renderer.getTableCellRendererComponent(table, column.getHeaderValue(), false, false, 0, 0);
+            width = comp.getPreferredSize().width;
+
+            for (int r = 0; r < table.getRowCount(); r++) {
+                renderer = table.getCellRenderer(r, col);
+                comp = renderer.getTableCellRendererComponent(table, table.getValueAt(r, col), false, false, r, col);
+                int currentWidth = comp.getPreferredSize().width;
+                width = Math.max(width, currentWidth);
+            }
+
+            width += 20;  // margin
+
+            column.setPreferredWidth(width);
+            column.setWidth(width);
+        }
+
         final Font font = table.getFont();
         table.setRowHeight(font.getSize() * 6 / 5);
         return table;
