@@ -813,6 +813,29 @@ public final class Main extends JFrame implements ClosingWindowListener.ConfirmS
             }
         }.setToolTip(Lang.get("menu_labelPins_tt"));
 
+        ToolTipAction applyGenerics = new ToolTipAction(Lang.get("menu_applyGenerics")) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!circuitComponent.getCircuit().getAttributes().get(Keys.IS_GENERIC)) return;
+                ElementAttributes attr = new ElementAttributes();
+                try {
+                    attr.set(Keys.GENERIC, ElementTypeDescriptionCustom.createDeclarationDefault(circuitComponent.getCircuit()));
+                } catch (NodeException ex) {
+                    showError(Lang.get("msg_errParsingGenerics"), ex);
+                    return;
+                }
+                AttributeDialog dialog = new AttributeDialog(Main.this, null, attr, Keys.GENERIC)
+                        .setDialogTitle(Lang.get("menu_applyGenerics"));
+                dialog.setPreferredSize(new Dimension(500, 300));
+                ElementAttributes modified = dialog.showDialog();
+                if (modified != null) {
+                    String argsCode = modified.get(Keys.GENERIC);
+                    circuitComponent.applyGenerics(argsCode);
+                }
+                ensureModelIsStopped();
+            }
+        }.setToolTip(Lang.get("menu_applyGenerics_tt"));
+
         edit.add(circuitComponent.getUndoAction().createJMenuItemNoIcon());
         edit.add(circuitComponent.getRedoAction().createJMenuItemNoIcon());
         edit.addSeparator();
@@ -821,6 +844,7 @@ public final class Main extends JFrame implements ClosingWindowListener.ConfirmS
         edit.add(restoreAllFuses.createJMenuItem());
         edit.add(createSpecialEditMenu());
         edit.add(labelPins.createJMenuItem());
+        edit.add(applyGenerics.createJMenuItem());
         edit.addSeparator();
         edit.add(orderInputs.createJMenuItem());
         edit.add(orderOutputs.createJMenuItem());

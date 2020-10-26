@@ -1291,6 +1291,26 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
         modify(builder.build());
     }
 
+    public void applyGenerics(String argsCode) {
+        try {
+            ResolveGenerics.CircuitHolder circuitHolder = new ResolveGenerics().resolveCircuit(argsCode, getCircuit(), library);
+
+            // Copy all attributes from generified circuit to current circuit.
+            Modifications.Builder<Circuit> builder = new Modifications.Builder<>(Lang.get("menu_applyGenerics"));
+            ArrayList<VisualElement> elements = getCircuit().getElements();
+            ArrayList<VisualElement> modElements = circuitHolder.getCircuit().getElements();
+            for (int i = 0; i < elements.size(); i++) {
+                builder.add(new ModifyAttributes(elements.get(i), modElements.get(i).getElementAttributes()));
+            }
+            modify(builder.build());
+        } catch (NodeException e) {
+            final NodeException ex = new NodeException(Lang.get("err_evaluatingGenericsCode_N_N", getName(), argsCode), e);
+            new ErrorMessage(Lang.get("msg_errParsingGenerics")).addCause(ex).show(CircuitComponent.this);
+        } catch (ElementNotFoundException e) {
+            // Do nothing.
+        }
+    }
+
     private VisualElement getActualVisualElement() {
         if (activeMouseController instanceof MouseControllerMoveElement)
             mouseNormal.activate();

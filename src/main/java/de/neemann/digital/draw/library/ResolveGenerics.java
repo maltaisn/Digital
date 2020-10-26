@@ -35,6 +35,21 @@ public class ResolveGenerics {
     /**
      * Resolves the generics
      *
+     * @param argsCode      the arguments code
+     * @param circuit       the circuit to resolve
+     * @param library       the library to ude
+     * @return the resolved circuit
+     * @throws NodeException            NodeException
+     * @throws ElementNotFoundException ElementNotFoundException
+     */
+    public CircuitHolder resolveCircuit(String argsCode, Circuit circuit, LibraryInterface library) throws NodeException, ElementNotFoundException {
+        final Args args = createArgs(argsCode, circuit);
+        return resolveCircuit(args, circuit, library);
+    }
+
+    /**
+     * Resolves the generics
+     *
      * @param visualElement the visual element
      * @param circuit       the circuit to resolve
      * @param library       the library to ude
@@ -44,7 +59,20 @@ public class ResolveGenerics {
      */
     public CircuitHolder resolveCircuit(VisualElement visualElement, Circuit circuit, LibraryInterface library) throws NodeException, ElementNotFoundException {
         final Args args = createArgs(visualElement, circuit);
+        return resolveCircuit(args, circuit, library);
+    }
 
+    /**
+     * Resolves the generics
+     *
+     * @param args          the generic arguments
+     * @param circuit       the circuit to resolve
+     * @param library       the library to ude
+     * @return the resolved circuit
+     * @throws NodeException            NodeException
+     * @throws ElementNotFoundException ElementNotFoundException
+     */
+    private CircuitHolder resolveCircuit(Args args, Circuit circuit, LibraryInterface library) throws NodeException, ElementNotFoundException {
         Circuit c = circuit.createDeepCopy();
         for (VisualElement ve : c.getElements()) {
             String gen = ve.getElementAttributes().get(Keys.GENERIC).trim();
@@ -94,6 +122,19 @@ public class ResolveGenerics {
             context = new Context();
 
         return new Args(context);
+    }
+
+    private Args createArgs(String argsCode, Circuit circuit) throws NodeException {
+        try {
+            Statement s = getStatement(argsCode);
+            Context context = new Context();
+            s.execute(context);
+            return new Args(context);
+        } catch (HGSEvalException | ParserException | IOException e) {
+            final NodeException ex = new NodeException(Lang.get("msg_errParsingGenerics"), e);
+            ex.setOrigin(circuit.getOrigin());
+            throw ex;
+        }
     }
 
     private Statement getStatement(String code) throws IOException, ParserException {
