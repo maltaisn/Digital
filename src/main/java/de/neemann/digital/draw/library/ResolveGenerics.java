@@ -177,6 +177,10 @@ public class ResolveGenerics {
             return args.equals(that.args);
         }
 
+        public Context getContext() {
+            return args;
+        }
+
         @Override
         public int hashCode() {
             return Objects.hash(args);

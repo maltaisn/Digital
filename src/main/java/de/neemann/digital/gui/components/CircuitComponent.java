@@ -24,6 +24,8 @@ import de.neemann.digital.draw.shapes.ShapeFactory;
 import de.neemann.digital.gui.Main;
 import de.neemann.digital.gui.Settings;
 import de.neemann.digital.gui.components.modification.*;
+import de.neemann.digital.hdl.hgs.Context;
+import de.neemann.digital.hdl.hgs.Parser;
 import de.neemann.digital.lang.Lang;
 import de.neemann.digital.undo.*;
 import de.neemann.gui.*;
@@ -1300,7 +1302,14 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
             ArrayList<VisualElement> elements = getCircuit().getElements();
             ArrayList<VisualElement> modElements = circuitHolder.getCircuit().getElements();
             for (int i = 0; i < elements.size(); i++) {
-                builder.add(new ModifyAttributes(elements.get(i), modElements.get(i).getElementAttributes()));
+                ElementAttributes newAttributes = modElements.get(i).getElementAttributes();
+                Context veContext = modElements.get(i).getGenericArgs();
+                if (veContext != null) {
+                    // Element is generic, comment out current code and export actual context content.
+                    newAttributes.set(Keys.GENERIC, commentAndApplyGenericsCode(veContext,
+                            newAttributes.get(Keys.GENERIC), circuitHolder.getArgs().getContext()));
+                }
+                builder.add(new ModifyAttributes(elements.get(i), newAttributes));
             }
             modify(builder.build());
         } catch (NodeException e) {
@@ -1309,6 +1318,61 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
         } catch (ElementNotFoundException e) {
             // Do nothing.
         }
+    }
+
+    private String commentAndApplyGenericsCode(Context context, String code, Context args) {
+        StringBuilder sb = new StringBuilder(code);
+        int pos = 0;
+        int posInLine = 0;
+        while (pos < sb.length()) {
+            if (posInLine == 0) {
+                sb.insert(pos, "// ");
+                posInLine++;
+            } else if (sb.charAt(pos) == '\n') {
+                posInLine = 0;
+            } else {
+                posInLine++;
+            }
+            pos++;
+        }
+        sb.append("\n\n");
+
+        Map<String, Object> exported = new HashMap<>();
+        for (Map.Entry<String, Object> entry : context.getMap().entrySet()) {
+            String name = entry.getKey();
+            Object value = entry.getValue();
+            if (!name.equals("args")) {
+                exported.put(name, value);
+            }
+        }
+        for (Map.Entry<String, Object> argsEntry : args.getMap().entrySet()) {
+            if (!exported.containsKey(argsEntry.getKey())) {
+                exported.put(argsEntry.getKey(), argsEntry.getValue());
+            }
+        }
+
+        for (Map.Entry<String, Object> entry : exported.entrySet()) {
+            Object value = entry.getValue();
+            String valueStr = null;
+            if (value instanceof Long)
+                valueStr = value.toString();
+            else if (value instanceof Integer)
+                valueStr = "int(" + value.toString() + ")";
+            else if (value instanceof String)
+                valueStr = '"' + Parser.getEscapedString((String) value) + '"';
+            else if (value instanceof Double)
+                valueStr = "float(" + value.toString() + ")";
+            if (valueStr != null) {
+                sb.append("export ");
+                sb.append(entry.getKey());
+                sb.append(" := ");
+                sb.append(valueStr);
+                sb.append(";\n");
+            }
+        }
+
+        sb.deleteCharAt(sb.length() - 1);
+        return sb.toString();
     }
 
     private VisualElement getActualVisualElement() {

@@ -281,6 +281,13 @@ public class Context implements HGSMap {
         return map.get(key);
     }
 
+    /**
+     * @return the context map
+     */
+    public Map<String, Object> getMap() {
+        return map;
+    }
+
     private static final class FunctionPrint extends InnerFunction {
         private FunctionPrint() {
             super(-1);

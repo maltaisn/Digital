@@ -608,4 +608,41 @@ public class Parser {
         }
     }
 
+    /**
+     * Correctly escape a string value.
+     * @param s string to escape
+     * @return the escaped string.
+     */
+    public static String getEscapedString(String s) {
+        if (s == null)
+            return null;
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            String val = "";
+            switch (c) {
+                case '\\':
+                    val = "\\\\";
+                    break;
+                case '\n':
+                    val = "\\n";
+                    break;
+                case '\r':
+                    val = "\\r";
+                    break;
+                case '\t':
+                    val = "\\t";
+                    break;
+                case '"':
+                    val = "\\\"";
+                    break;
+                default:
+                    val = String.valueOf(c);
+            }
+            sb.append(val);
+        }
+        return sb.toString();
+    }
+
 }
