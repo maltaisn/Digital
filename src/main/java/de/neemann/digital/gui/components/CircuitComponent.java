@@ -1302,14 +1302,21 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
             ArrayList<VisualElement> elements = getCircuit().getElements();
             ArrayList<VisualElement> modElements = circuitHolder.getCircuit().getElements();
             for (int i = 0; i < elements.size(); i++) {
-                ElementAttributes newAttributes = modElements.get(i).getElementAttributes();
+                VisualElement ve = elements.get(i);
+                VisualElement modVe = modElements.get(i);
+                ElementAttributes newAttributes = modVe.getElementAttributes();
                 Context veContext = modElements.get(i).getGenericArgs();
                 if (veContext != null) {
-                    // Element is generic, comment out current code and export actual context content.
-                    newAttributes.set(Keys.GENERIC, commentAndApplyGenericsCode(veContext,
+                    // Element is generic, put current code in an "if (isPresent(args))" block and put
+                    // actual argument values in the else clause.
+                    newAttributes.set(Keys.GENERIC, applyArgsOnGenericCode(veContext,
                             newAttributes.get(Keys.GENERIC), circuitHolder.getArgs().getContext()));
                 }
-                builder.add(new ModifyAttributes(elements.get(i), newAttributes));
+                builder.add(new ModifyAttributes(ve, newAttributes));
+                if (!ve.getElementName().equals(modVe.getElementName())) {
+                    // setCircuit was used. Change the element.
+                    builder.add(new ModifyName(ve, modVe.getElementName()));
+                }
             }
             modify(builder.build());
         } catch (NodeException e) {
@@ -1320,13 +1327,15 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
         }
     }
 
-    private String commentAndApplyGenericsCode(Context context, String code, Context args) {
+    private String applyArgsOnGenericCode(Context context, String code, Context args) {
         StringBuilder sb = new StringBuilder(code);
+
+        // Indent the whole code
         int pos = 0;
         int posInLine = 0;
         while (pos < sb.length()) {
             if (posInLine == 0) {
-                sb.insert(pos, "// ");
+                sb.insert(pos, "    ");
                 posInLine++;
             } else if (sb.charAt(pos) == '\n') {
                 posInLine = 0;
@@ -1335,8 +1344,11 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
             }
             pos++;
         }
-        sb.append("\n\n");
 
+        sb.insert(0, "if (isPresent(args)) {\n");
+        sb.append("\n} else {\n");
+
+        // Get all exported values and all argument values.
         Map<String, Object> exported = new HashMap<>();
         for (Map.Entry<String, Object> entry : context.getMap().entrySet()) {
             String name = entry.getKey();
@@ -1351,6 +1363,7 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
             }
         }
 
+        // Export all those values.
         for (Map.Entry<String, Object> entry : exported.entrySet()) {
             Object value = entry.getValue();
             String valueStr = null;
@@ -1363,7 +1376,7 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
             else if (value instanceof Double)
                 valueStr = "float(" + value.toString() + ")";
             if (valueStr != null) {
-                sb.append("export ");
+                sb.append("    export ");
                 sb.append(entry.getKey());
                 sb.append(" := ");
                 sb.append(valueStr);
@@ -1371,7 +1384,7 @@ public class CircuitComponent extends JComponent implements ChangedListener, Lib
             }
         }
 
-        sb.deleteCharAt(sb.length() - 1);
+        sb.append("}");
         return sb.toString();
     }
 
