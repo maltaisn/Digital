@@ -7,11 +7,14 @@ package de.neemann.digital.testing;
 
 import de.neemann.digital.core.Model;
 import de.neemann.digital.core.NodeException;
+import de.neemann.digital.core.element.ElementAttributes;
+import de.neemann.digital.core.element.Keys;
 import de.neemann.digital.draw.elements.Circuit;
 import de.neemann.digital.draw.elements.PinException;
 import de.neemann.digital.draw.elements.VisualElement;
 import de.neemann.digital.draw.library.ElementLibrary;
 import de.neemann.digital.draw.library.ElementNotFoundException;
+import de.neemann.digital.draw.library.ResolveGenerics;
 import de.neemann.digital.draw.model.ModelCreator;
 import de.neemann.digital.draw.shapes.ShapeFactory;
 import de.neemann.digital.lang.Lang;
@@ -185,11 +188,14 @@ public class FolderTestRunner {
                 FileToTest f = files.get(i);
                 try {
                     Circuit circuit = Circuit.loadCircuit(f.file, shapeFactory);
+                    boolean isGeneric = circuit.getAttributes().get(Keys.IS_GENERIC);
                     ArrayList<TestCase> testCases = new ArrayList<>();
                     for (VisualElement el : circuit.getTestCases()) {
-                        String label = el.getElementAttributes().getLabel();
-                        TestCaseDescription testData = el.getElementAttributes().get(TestCaseElement.TESTDATA);
-                        testCases.add(new TestCase(label, testData));
+                        ElementAttributes attributes = el.getElementAttributes();
+                        String label = attributes.getLabel();
+                        TestCaseDescription testData = attributes.get(TestCaseElement.TESTDATA);
+                        String argsCode = isGeneric ? attributes.get(Keys.GENERIC) : null;
+                        testCases.add(new TestCase(label, testData, argsCode));
                     }
                     if (testCases.isEmpty()) {
                         // if no test data is available, at least check if the model is error free
@@ -204,7 +210,12 @@ public class FolderTestRunner {
                         StringBuilder sb = new StringBuilder();
                         int rowCount = 0;
                         for (TestCase tc : testCases) {
-                            Model model = new ModelCreator(circuit, library).createModel(false);
+                            Circuit circuitCopy = circuit;
+                            if (tc.argsCode != null && !tc.argsCode.trim().isEmpty()) {
+                                circuitCopy = new ResolveGenerics().resolveCircuit(tc.argsCode, circuit, library).getCircuit();
+                            }
+
+                            Model model = new ModelCreator(circuitCopy, library).createModel(false);
                             try {
                                 TestExecutor te = new TestExecutor(tc.testData).create(model);
                                 if (te.allPassed()) {
@@ -242,10 +253,12 @@ public class FolderTestRunner {
     private static final class TestCase {
         private final String label;
         private final TestCaseDescription testData;
+        private final String argsCode;
 
-        private TestCase(String label, TestCaseDescription testData) {
+        private TestCase(String label, TestCaseDescription testData, String argsCode) {
             this.label = label;
             this.testData = testData;
+            this.argsCode = argsCode;
         }
     }
 

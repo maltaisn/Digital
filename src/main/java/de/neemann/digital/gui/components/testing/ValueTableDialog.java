@@ -15,6 +15,7 @@ import de.neemann.digital.draw.elements.Circuit;
 import de.neemann.digital.draw.elements.PinException;
 import de.neemann.digital.draw.library.ElementLibrary;
 import de.neemann.digital.draw.library.ElementNotFoundException;
+import de.neemann.digital.draw.library.ResolveGenerics;
 import de.neemann.digital.draw.model.ModelCreator;
 import de.neemann.digital.gui.SaveAsHelper;
 import de.neemann.digital.gui.components.data.GraphDialog;
@@ -121,12 +122,17 @@ public class ValueTableDialog extends JDialog {
      * @throws PinException             PinException
      * @throws ElementNotFoundException ElementNotFoundException
      */
-    public ValueTableDialog addTestResult(ArrayList<TestSet> tsl, Circuit circuit, ElementLibrary library) throws TestingDataException, ElementNotFoundException, PinException, NodeException {
+    public ValueTableDialog addTestResult(ArrayList<TestSet> tsl, final Circuit circuit, ElementLibrary library) throws TestingDataException, ElementNotFoundException, PinException, NodeException {
         Collections.sort(tsl);
         int i = 0;
         int errorTabIndex = -1;
         for (TestSet ts : tsl) {
-            Model model = new ModelCreator(circuit, library).createModel(false);
+            Circuit circuitCopy = circuit;
+            if (ts.argsCode != null && !ts.argsCode.trim().isEmpty()) {
+                circuitCopy = new ResolveGenerics().resolveCircuit(ts.argsCode, circuit, library).getCircuit();
+            }
+
+            Model model = new ModelCreator(circuitCopy, library).createModel(false);
             ErrorDetector errorDetector = new ErrorDetector();
             model.addObserver(errorDetector);
             try {
@@ -201,22 +207,25 @@ public class ValueTableDialog extends JDialog {
     }
 
     /**
-     * A TestSet contains the {@link TestCaseDescription} and the name of the TestData.
+     * A TestSet contains the {@link TestCaseDescription}, the generic parametrization and the name of the TestData.
      * Is only a value bean
      */
     public static class TestSet implements Comparable<TestSet> {
 
         private final TestCaseDescription data;
+        private final String argsCode;
         private final String name;
 
         /**
          * Creates a new instance
          *
          * @param data the TestData
+         * @param argsCode generic parametrization to use for the test, can be null.
          * @param name the name of the data, eg. the used label
          */
-        public TestSet(TestCaseDescription data, String name) {
+        public TestSet(TestCaseDescription data, String argsCode, String name) {
             this.data = data;
+            this.argsCode = argsCode;
             this.name = name;
         }
 
