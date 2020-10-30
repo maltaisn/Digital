@@ -1822,9 +1822,9 @@ Sind evtl. die Namen der Variablen nicht eindeutig?</string>
     <string name="menu_labelPins">Ein- und Ausgänge benennen</string>
     <string name="menu_labelPins_tt">Für alle unbenannten Ein- und Ausgänge eine Bezeichnung setzen.</string>
 
-    <string name="menu_applyGenerics">Apply generic parameterization</string>
-    <string name="menu_applyGenerics_tt">Set the value of generic parameters to change the attributes
-        of the circuit according to the generic parameterization.</string>
+    <string name="menu_createParameterized">Create parameterized circuit</string>
+    <string name="menu_createParameterized_tt">Enter arguments and generate a new circuit
+        according to the generic parameterization.</string>
 
     <string name="menu_tutorial">Tutorial starten</string>
     <string name="menu_tutorial_tt">Startet das Anfänger-Tutorial.</string>

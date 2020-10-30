@@ -15,7 +15,9 @@ import de.neemann.digital.hdl.hgs.function.Function;
 import de.neemann.digital.lang.Lang;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 /**
@@ -37,7 +39,7 @@ public class ResolveGenerics {
      *
      * @param argsCode      the arguments code
      * @param circuit       the circuit to resolve
-     * @param library       the library to ude
+     * @param library       the library to use
      * @return the resolved circuit
      * @throws NodeException            NodeException
      * @throws ElementNotFoundException ElementNotFoundException
@@ -52,7 +54,7 @@ public class ResolveGenerics {
      *
      * @param visualElement the visual element
      * @param circuit       the circuit to resolve
-     * @param library       the library to ude
+     * @param library       the library to use
      * @return the resolved circuit
      * @throws NodeException            NodeException
      * @throws ElementNotFoundException ElementNotFoundException
@@ -67,7 +69,7 @@ public class ResolveGenerics {
      *
      * @param args          the generic arguments
      * @param circuit       the circuit to resolve
-     * @param library       the library to ude
+     * @param library       the library to use
      * @return the resolved circuit
      * @throws NodeException            NodeException
      * @throws ElementNotFoundException ElementNotFoundException
@@ -100,6 +102,35 @@ public class ResolveGenerics {
             }
         }
         return new CircuitHolder(c, args);
+    }
+
+    /**
+     * Resolves the generics and return a circuit intended to be viewed
+     *
+     * @param argsCode      the arguments code
+     * @param circuit       the circuit to resolve
+     * @param library       the library to use
+     * @return the resolved circuit
+     * @throws NodeException            NodeException
+     * @throws ElementNotFoundException ElementNotFoundException
+     */
+    public CircuitHolder resolveCircuitForViewing(String argsCode, Circuit circuit, LibraryInterface library) throws NodeException, ElementNotFoundException {
+        ResolveGenerics.CircuitHolder circuitHolder = resolveCircuit(argsCode, circuit, library);
+
+        Circuit modCircuit = circuitHolder.getCircuit();
+        modCircuit.getAttributes().set(Keys.IS_GENERIC, false);
+
+        // Change generic code on generic subcircuits.
+        ArrayList<VisualElement> elements = modCircuit.getElements();
+        for (VisualElement ve : elements) {
+            if (ve.getGenericArgs() != null) {
+                // Element is generic. Clear the code and export all context values instead.
+                ve.getElementAttributes().set(Keys.GENERIC, getParameterizedGenericCode(
+                        ve.getGenericArgs(), circuitHolder.getArgs().getContext()));
+            }
+        }
+
+        return circuitHolder;
     }
 
     private Args createArgs(VisualElement visualElement, Circuit circuit) throws NodeException {
@@ -135,6 +166,87 @@ public class ResolveGenerics {
             ex.setOrigin(circuit.getOrigin());
             throw ex;
         }
+    }
+
+    private String getParameterizedGenericCode(Context context, Context args) {
+        StringBuilder sb = new StringBuilder();
+
+        // Get all exported values and all argument values.
+        Map<String, Object> exported = new HashMap<>();
+        for (Map.Entry<String, Object> entry : context.getMap().entrySet()) {
+            String name = entry.getKey();
+            Object value = entry.getValue();
+            if (!name.equals("args")) {
+                exported.put(name, value);
+            }
+        }
+        for (Map.Entry<String, Object> argsEntry : args.getMap().entrySet()) {
+            if (!exported.containsKey(argsEntry.getKey())) {
+                exported.put(argsEntry.getKey(), argsEntry.getValue());
+            }
+        }
+
+        // Export all those values.
+        for (Map.Entry<String, Object> entry : exported.entrySet()) {
+            Object value = entry.getValue();
+            String valueStr = null;
+            if (value instanceof Long)
+                valueStr = value.toString();
+            else if (value instanceof Integer)
+                valueStr = "int(" + value.toString() + ")";
+            else if (value instanceof String)
+                valueStr = '"' + getEscapedString((String) value) + '"';
+            else if (value instanceof Boolean)
+                valueStr = value.toString();
+            else if (value instanceof Double)
+                valueStr = "float(" + value.toString() + ")";
+            if (valueStr != null) {
+                sb.append("export ");
+                sb.append(entry.getKey());
+                sb.append(" := ");
+                sb.append(valueStr);
+                sb.append(";\n");
+            }
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Correctly escape a string value.
+     * @param s string to escape
+     * @return the escaped string.
+     */
+    private static String getEscapedString(String s) {
+        if (s == null)
+            return null;
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            String val = "";
+            switch (c) {
+                case '\\':
+                    val = "\\\\";
+                    break;
+                case '\n':
+                    val = "\\n";
+                    break;
+                case '\r':
+                    val = "\\r";
+                    break;
+                case '\t':
+                    val = "\\t";
+                    break;
+                case '"':
+                    val = "\\\"";
+                    break;
+                default:
+                    val = String.valueOf(c);
+            }
+            sb.append(val);
+        }
+        return sb.toString();
     }
 
     private Statement getStatement(String code) throws IOException, ParserException {
@@ -177,7 +289,7 @@ public class ResolveGenerics {
             return args.equals(that.args);
         }
 
-        public Context getContext() {
+        Context getContext() {
             return args;
         }
 

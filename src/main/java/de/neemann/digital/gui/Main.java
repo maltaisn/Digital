@@ -25,6 +25,7 @@ import de.neemann.digital.draw.graphics.*;
 import de.neemann.digital.draw.library.ElementLibrary;
 import de.neemann.digital.draw.library.ElementNotFoundException;
 import de.neemann.digital.draw.library.ElementTypeDescriptionCustom;
+import de.neemann.digital.draw.library.ResolveGenerics;
 import de.neemann.digital.draw.model.AsyncSequentialClock;
 import de.neemann.digital.draw.model.ModelCreator;
 import de.neemann.digital.draw.model.RealTimeClock;
@@ -813,9 +814,9 @@ public final class Main extends JFrame implements ClosingWindowListener.ConfirmS
             }
         }.setToolTip(Lang.get("menu_labelPins_tt"));
 
-        ToolTipAction applyGenerics = new ToolTipAction(Lang.get("menu_applyGenerics")) {
+        ToolTipAction createParameterized = new ToolTipAction(Lang.get("menu_createParameterized")) {
             @Override
-            public void actionPerformed(ActionEvent e) {
+            public void actionPerformed(ActionEvent event) {
                 if (!circuitComponent.getCircuit().getAttributes().get(Keys.IS_GENERIC)) return;
                 ElementAttributes attr = new ElementAttributes();
                 try {
@@ -825,16 +826,33 @@ public final class Main extends JFrame implements ClosingWindowListener.ConfirmS
                     return;
                 }
                 AttributeDialog dialog = new AttributeDialog(Main.this, null, attr, Keys.GENERIC)
-                        .setDialogTitle(Lang.get("menu_applyGenerics"));
+                        .setDialogTitle(Lang.get("menu_createParameterized"));
                 dialog.setPreferredSize(new Dimension(500, 300));
                 ElementAttributes modified = dialog.showDialog();
-                if (modified != null) {
-                    String argsCode = modified.get(Keys.GENERIC);
-                    circuitComponent.applyGenerics(argsCode);
+                if (modified == null)
+                    return;
+
+                String argsCode = modified.get(Keys.GENERIC);
+                try {
+                    Circuit circuit = new ResolveGenerics().resolveCircuitForViewing(
+                            argsCode, circuitComponent.getCircuit(), library).getCircuit();
+                    new MainBuilder()
+                            .setParent(Main.this)
+                            .setLibrary(library)
+                            .setCircuit(circuit)
+                            .setBaseFileName(getBaseFileName())
+                            .keepPrefMainFile()
+                            .build()
+                            .setVisible(true);
+                    ensureModelIsStopped();
+                } catch (NodeException e) {
+                    final NodeException ex = new NodeException(Lang.get("err_evaluatingGenericsCode_N_N", getName(), argsCode), e);
+                    showError(Lang.get("msg_errParsingGenerics"), ex);
+                } catch (ElementNotFoundException e) {
+                    // do nothing
                 }
-                ensureModelIsStopped();
             }
-        }.setToolTip(Lang.get("menu_applyGenerics_tt"));
+        }.setToolTip(Lang.get("menu_createParameterized_tt"));
 
         edit.add(circuitComponent.getUndoAction().createJMenuItemNoIcon());
         edit.add(circuitComponent.getRedoAction().createJMenuItemNoIcon());
@@ -844,7 +862,7 @@ public final class Main extends JFrame implements ClosingWindowListener.ConfirmS
         edit.add(restoreAllFuses.createJMenuItem());
         edit.add(createSpecialEditMenu());
         edit.add(labelPins.createJMenuItem());
-        edit.add(applyGenerics.createJMenuItem());
+        edit.add(createParameterized.createJMenuItem());
         edit.addSeparator();
         edit.add(orderInputs.createJMenuItem());
         edit.add(orderOutputs.createJMenuItem());
