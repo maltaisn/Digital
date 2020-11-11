@@ -16,6 +16,10 @@ import de.neemann.digital.lang.Lang;
 import de.neemann.gui.ErrorMessage;
 
 import javax.swing.*;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeExpansionListener;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.TreePath;
 import java.awt.*;
@@ -61,8 +65,44 @@ public class SelectTree extends JTree {
                 }
             }
         });
+        addTreeExpansionListener(new TreeExpansionListener() {
+            @Override
+            public void treeExpanded(TreeExpansionEvent event) {
+                model.setExpanded(event.getPath(), true);
+            }
+
+            @Override
+            public void treeCollapsed(TreeExpansionEvent event) {
+                model.setExpanded(event.getPath(), false);
+            }
+        });
         setCellRenderer(new MyCellRenderer());
         setToolTipText("");
+
+        model.addTreeModelListener(new TreeModelListener() {
+            @Override
+            public void treeNodesChanged(TreeModelEvent e) {
+            }
+
+            @Override
+            public void treeNodesInserted(TreeModelEvent e) {
+            }
+
+            @Override
+            public void treeNodesRemoved(TreeModelEvent e) {
+            }
+
+            @Override
+            public void treeStructureChanged(TreeModelEvent e) {
+                // Restore expanded state for all paths.
+                for (TreePath path : model.getExpandedPaths()) {
+                    expandPath(path);
+                }
+                for (TreePath path : model.getTempExpandedPaths()) {
+                    expandPath(path);
+                }
+            }
+        });
 
         // open first child
         expandPath(new TreePath(model.getTypedRoot().getChild(0).getPath()));
@@ -78,6 +118,18 @@ public class SelectTree extends JTree {
             }
         }
         return null;
+    }
+
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+
+        if (getRowCount() == 0) {
+            g.setColor(Color.GRAY);
+            String text = Lang.get("key_search_noResults");
+            g.drawString(text, (getWidth() - g.getFontMetrics().stringWidth(text)) / 2,
+                    Math.min((getHeight() + getFont().getSize()) / 2, 100));
+        }
     }
 
     private class MyCellRenderer extends DefaultTreeCellRenderer {

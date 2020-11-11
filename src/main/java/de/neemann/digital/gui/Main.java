@@ -43,6 +43,7 @@ import de.neemann.digital.gui.components.terminal.KeyboardDialog;
 import de.neemann.digital.gui.components.testing.TestAllDialog;
 import de.neemann.digital.gui.components.testing.ValueTableDialog;
 import de.neemann.digital.gui.components.tree.LibraryTreeModel;
+import de.neemann.digital.gui.components.tree.SelectSearch;
 import de.neemann.digital.gui.components.tree.SelectTree;
 import de.neemann.digital.gui.release.CheckForNewRelease;
 import de.neemann.digital.gui.remote.DigitalHandler;
@@ -392,7 +393,10 @@ public final class Main extends JFrame implements ClosingWindowListener.ConfirmS
             if (treeCheckBox.isSelected()) {
                 JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
                 treeModel = new LibraryTreeModel(library);
-                split.setLeftComponent(new JScrollPane(new SelectTree(treeModel, circuitComponent, shapeFactory, insertHistory)));
+                JPanel treePanel = new JPanel(new BorderLayout());
+                treePanel.add(new SelectSearch(treeModel), BorderLayout.NORTH);
+                treePanel.add(new JScrollPane(new SelectTree(treeModel, circuitComponent, shapeFactory, insertHistory)), BorderLayout.CENTER);
+                split.setLeftComponent(treePanel);
                 split.setRightComponent(circuitScrollPanel);
                 getContentPane().add(split);
                 componentOnPane = split;

@@ -5,6 +5,17 @@
  */
 package de.neemann.digital.draw.library;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Objects;
+
+import javax.swing.*;
+
 import de.neemann.digital.core.basic.Not;
 import de.neemann.digital.core.element.ElementAttributes;
 import de.neemann.digital.core.element.ElementTypeDescription;
@@ -16,14 +27,6 @@ import de.neemann.digital.gui.Settings;
 import de.neemann.digital.lang.Lang;
 import de.neemann.gui.IconCreator;
 import de.neemann.gui.LineBreaker;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.swing.*;
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Iterator;
 
 /**
  * A node in the components library
@@ -435,5 +438,48 @@ public class LibraryNode implements Iterable<LibraryNode> {
             return false;
 
         return file.equals(other.file);
+    }
+
+    /**
+     * Filter this node with a search query, returning a shallow filtered copy.
+     *
+     * @param query search query. An empty string results in no filtering.
+     * @return a filtered library node.
+     */
+    public LibraryNode filter(String query) {
+        if (children == null) {
+            return checkQueryMatch(query, name) || checkQueryMatch(query, translatedName) ? this : null;
+        } else {
+            LibraryNode node = new LibraryNode(name);
+            node.setLibrary(library);
+            for (LibraryNode child : this) {
+                if (!child.isHidden()) {
+                    LibraryNode filtered = child.filter(query);
+                    if (filtered != null)
+                        node.add(filtered);
+                }
+            }
+            return node.children.isEmpty() ? null : node;
+        }
+    }
+
+    private static boolean checkQueryMatch(String query, String text) {
+        return text.toLowerCase().contains(query);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        // Needed for persisting expanded paths across filterings.
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        LibraryNode node = (LibraryNode) o;
+        return name.equals(node.name) &&
+                Objects.equals(file, node.file) &&
+                library.equals(node.library);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, file, library);
     }
 }
