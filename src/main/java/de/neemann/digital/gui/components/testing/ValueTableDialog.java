@@ -25,6 +25,8 @@ import de.neemann.digital.core.element.ElementAttributes;
 import de.neemann.digital.core.element.Keys;
 import de.neemann.digital.core.io.In;
 import de.neemann.digital.core.io.Out;
+import de.neemann.digital.core.io.Probe;
+import de.neemann.digital.core.wiring.Clock;
 import de.neemann.digital.data.Value;
 import de.neemann.digital.data.ValueTable;
 import de.neemann.digital.data.ValueTableModel;
@@ -241,7 +243,8 @@ public class ValueTableDialog extends JDialog {
     private ValueRenderer createValueRenderer(ValueTable valueTable) {
         ArrayList<VisualElement> ioElements = new ArrayList<>();
         for (VisualElement ve : ((Main) owner).getCircuitComponent().getCircuit().getElements()) {
-            if (ve.equalsDescription(In.DESCRIPTION) || ve.equalsDescription(Out.DESCRIPTION)) {
+            if (ve.equalsDescription(In.DESCRIPTION) || ve.equalsDescription(Out.DESCRIPTION)
+                    || ve.equalsDescription(Probe.DESCRIPTION) || ve.equalsDescription(Clock.DESCRIPTION)) {
                 ioElements.add(ve);
             }
         }
