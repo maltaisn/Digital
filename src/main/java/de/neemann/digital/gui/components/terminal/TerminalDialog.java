@@ -15,6 +15,11 @@ import de.neemann.gui.Screen;
 import de.neemann.gui.ToolTipAction;
 
 import javax.swing.*;
+import javax.swing.text.AbstractDocument;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DocumentFilter;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 
@@ -27,6 +32,7 @@ public final class TerminalDialog extends JDialog {
     private final JTextArea textArea;
     private final int width;
     private int pos;
+    private boolean allowChange;
 
     /**
      * Creates a new GUI terminal
@@ -58,13 +64,33 @@ public final class TerminalDialog extends JDialog {
         width = attr.get(Keys.TERM_WIDTH);
         textArea = new JTextArea(attr.get(Keys.TERM_HEIGHT), width);
         textArea.setFont(new Font("monospaced", Font.PLAIN, Screen.getInstance().getFontSize()));
+        ((AbstractDocument) textArea.getDocument()).setDocumentFilter(new DocumentFilter() {
+            @Override
+            public void remove(FilterBypass fb, int offset, int length) throws BadLocationException {
+                if (allowChange)
+                    super.remove(fb, offset, length);
+            }
+
+            @Override
+            public void insertString(FilterBypass fb, int offset, String string, AttributeSet attr) throws BadLocationException {
+                if (allowChange)
+                    super.insertString(fb, offset, string, attr);
+            }
+
+            @Override
+            public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+            }
+        });
+        allowChange = false;
         getContentPane().add(new JScrollPane(textArea));
 
         JToolBar toolBar = new JToolBar();
         toolBar.add(new ToolTipAction(Lang.get("menu_terminalDelete"), CircuitComponent.ICON_DELETE) {
             @Override
             public void actionPerformed(ActionEvent e) {
+                allowChange = true;
                 textArea.setText("");
+                allowChange = false;
             }
         }.setToolTip(Lang.get("menu_terminalDelete_tt")).createJButtonNoText());
         getContentPane().add(toolBar, BorderLayout.NORTH);
@@ -72,8 +98,6 @@ public final class TerminalDialog extends JDialog {
         pack();
         setLocationRelativeTo(null);
         setVisible(true);
-
-        addWindowFocusListener(new MoveFocusTo(parent));
     }
 
     /**
@@ -82,6 +106,7 @@ public final class TerminalDialog extends JDialog {
      * @param value the character
      */
     private void addChar(char value) {
+        allowChange = true;
         switch (value) {
             case 13:
             case 10:
@@ -105,6 +130,7 @@ public final class TerminalDialog extends JDialog {
                     textArea.append("\n");
                 }
         }
+        allowChange = false;
     }
 
     private static final class MyTerminal implements TerminalInterface {
