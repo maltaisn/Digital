@@ -81,6 +81,8 @@ public final class TerminalDialog extends JDialog {
 
             @Override
             public void replace(FilterBypass fb, int offset, int length, String text, AttributeSet attrs) throws BadLocationException {
+                if (allowChange)
+                    super.replace(fb, offset, length, text, attrs);
             }
         });
         allowChange = false;
