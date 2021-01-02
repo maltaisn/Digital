@@ -1854,7 +1854,9 @@
     <string name="menu_table_showAllSolutions">Show results dialog</string>
     <string name="menu_table_showAllSolutions_tt">Shows the results dialog again if it was closed manually.</string>
     <string name="menu_terminalDelete">Delete</string>
-    <string name="menu_terminalDelete_tt">Delete the terminals content.</string>
+    <string name="menu_terminalDelete_tt">Delete the terminal's content.</string>
+    <string name="menu_terminalCopy">Copy</string>
+    <string name="menu_terminalCopy_tt">Copy the terminal's content to clipboard.</string>
     <string name="menu_view">View</string>
     <string name="menu_zoomIn">Zoom In</string>
     <string name="menu_zoomOut">Zoom Out</string>

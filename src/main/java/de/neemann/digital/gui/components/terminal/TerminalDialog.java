@@ -21,6 +21,8 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DocumentFilter;
 
 import java.awt.*;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 
 import static de.neemann.digital.gui.components.terminal.ConsoleTerminal.MAX_TERMINAL_STORED;
@@ -93,6 +95,13 @@ public final class TerminalDialog extends JDialog {
                 allowChange = false;
             }
         }.setToolTip(Lang.get("menu_terminalDelete_tt")).createJButtonNoText());
+        toolBar.add(new ToolTipAction(Lang.get("menu_terminalCopy"), CircuitComponent.ICON_COPY) {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+                clipboard.setContents(new StringSelection(textArea.getText()), null);
+            }
+        }.setToolTip(Lang.get("menu_terminalCopy_tt")).createJButtonNoText());
         getContentPane().add(toolBar, BorderLayout.NORTH);
 
         pack();
