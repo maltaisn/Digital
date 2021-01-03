@@ -20,7 +20,6 @@ import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 
 import de.neemann.digital.core.ErrorDetector;
-import de.neemann.digital.core.IntFormat;
 import de.neemann.digital.core.element.ElementAttributes;
 import de.neemann.digital.core.element.Keys;
 import de.neemann.digital.core.io.In;
@@ -288,9 +287,11 @@ public class ValueTableDialog extends JDialog {
             Value v = (Value) value;
             if (v != null) {
                 ElementAttributes attributes = ioAttributes.get(column - 1);
-                IntFormat format = attributes.get(Keys.INT_FORMAT);
-                int bits = attributes.getBits();
-                comp.setText(v.toStringWithFormat(format, bits));
+                if (attributes == null) {
+                    comp.setText(v.toString());
+                } else {
+                    comp.setText(v.toStringWithFormat(attributes.get(Keys.INT_FORMAT), attributes.getBits()));
+                }
                 comp.setHorizontalAlignment(JLabel.CENTER);
 
                 switch (((Value) value).getState()) {
