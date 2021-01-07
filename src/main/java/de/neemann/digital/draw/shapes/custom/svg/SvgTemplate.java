@@ -96,8 +96,13 @@ public class SvgTemplate implements Closeable {
         int y = 0;
         for (PinDescription i : inputs) {
             w.write("  <g>\n");
-            w.write("    <circle fill=\"" + getColor(Style.WIRE) + "\" id=\"pin:" + i.getName() + "\" cx=\"0\" cy=\"" + y + "\" r=\"3\"/>\n");
             Vector labelPos = new Vector(4, y + yOffs);
+            if (i.isClock()) {
+                final int triangle = 7;
+                w.write("    <path stroke=\"black\" stroke-width=\"2\" fill=\"none\" d=\"M 1 " + (y + triangle) + " L " + (triangle + 1) + " " + y + " L 1 " + (y - triangle) + " Z\"/>\n");
+                labelPos = labelPos.add(triangle, 0);
+            }
+            w.write("    <circle fill=\"" + getColor(Style.WIRE) + "\" id=\"pin:" + i.getName() + "\" cx=\"0\" cy=\"" + y + "\" r=\"3\"/>\n");
             w.write("    <text fill=\"" + getColor(style) + "\" font-size=\"" + style.getFontSize() + "\" x=\"" + labelPos.getX() + "\" y=\"" + labelPos.getY() + "\">" + i.getName() + "</text>\n");
             w.write("  </g>\n");
             y += 20;
